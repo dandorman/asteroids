@@ -1,8 +1,9 @@
 require 'sinatra'
+require 'haml'
 require 'coffee-script'
 
 get '/' do
-  File.read(File.join('public', 'index.html'))
+  haml :index
 end
 
 get '/app.js' do
