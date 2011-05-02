@@ -12,10 +12,10 @@ document.addEventListener 'DOMContentLoaded', (->
     @closePath()
     @stroke()
 
-  class Scene
+  class World
     constructor: (@canvas) ->
       @ctx = @canvas.getContext '2d'
-      @objects = []
+      @things = []
 
       @bg = 'black'
 
@@ -24,6 +24,10 @@ document.addEventListener 'DOMContentLoaded', (->
         height: @canvas.height / 2
 
       @ctx.translate @quadrant.width, @quadrant.height
+
+    addThing: (thing) ->
+      @things.push thing
+      thing.world = this
 
     drawBackground: ->
       @ctx.fillStyle = @bg
@@ -41,15 +45,15 @@ document.addEventListener 'DOMContentLoaded', (->
     render: ->
       @drawBackground()
 
-      for object in @objects
+      for thing in @things
         @ctx.save()
 
-        object.update()
-        object.x = @quadrant.width * -object.x.sign() unless @quadrant.width > object.x > -@quadrant.width
-        object.y = @quadrant.height * -object.y.sign() unless @quadrant.height > object.y > -@quadrant.height
+        thing.update()
+        thing.x = @quadrant.width * -thing.x.sign() unless @quadrant.width > thing.x > -@quadrant.width
+        thing.y = @quadrant.height * -thing.y.sign() unless @quadrant.height > thing.y > -@quadrant.height
 
-        @ctx.translate object.x, object.y
-        object.render @ctx
+        @ctx.translate thing.x, thing.y
+        thing.render @ctx
 
         @ctx.restore()
 
@@ -60,13 +64,13 @@ document.addEventListener 'DOMContentLoaded', (->
       @angle = options.angle ? 0
       @maxSpeed = options.maxSpeed ? 7
 
-      @thrusters = off
+      @thrusters = null
       @velocity =
         horizontal: 0
         vertical: 0
 
     update: ->
-      @accelerate() if @thrusters is on
+      @accelerate() if @thrusters
       @x += @velocity.horizontal
       @y += @velocity.vertical
 
@@ -88,10 +92,14 @@ document.addEventListener 'DOMContentLoaded', (->
       ctx.fill()
 
     fireThrusters: ->
-      @thrusters = on
+      thrust = =>
+        @world.addThing new Spark {x: @x - 10 * Math.cos(@angle), y: @y - 10 * Math.sin(@angle)}
+      thrust() unless @thrusters
+      @thrusters = setInterval thrust, 100 unless @thrusters
 
     stopThrusters: ->
-      @thrusters = off
+      clearInterval(@thrusters)
+      @thrusters= null
 
     accelerate: do ->
       timeout = null
@@ -121,13 +129,46 @@ document.addEventListener 'DOMContentLoaded', (->
         horizontal: 0
         vertical: 0
 
+  class Spark
+    constructor: (options = {}) ->
+      @x = options.x ? 0
+      @y = options.y ? 0
+
+      @alpha = 100
+      @logged = false
+
+    update: ->
+      @alpha -= 1
+
+    render: (ctx) ->
+      ctx.strokeStyle = "rgba(255, 0, 0, #{@alpha / 100})"
+      ctx.lineWidth = 2
+      ctx.line {x: -1, y: -1}, {x: 1, y: 1}
+
+  class X
+    constructor: (options = {}) ->
+      @x = options.x ? 0
+      @y = options.y ? 0
+      @color = options.color ? "white"
+      @size = options.size ? 5
+
+    update: ->
+
+    render: (ctx) ->
+      ctx.strokeStyle = @color
+      ctx.lineWidth = 1
+
+      ctx.line {x: -@size, y: -@size}, {x: @size, y: @size}
+      ctx.line {x: -@size, y: @size}, {x: @size, y: -@size}
+
+
   canvas = document.getElementsByTagName('canvas')[0]
   canvas.height = window.innerHeight
   canvas.width = window.innerWidth
 
-  scene = new Scene canvas
-  ship = new Ship()
-  scene.objects.push ship
+  world = new World canvas
+  ship = new Ship({x: 0, y: 0})
+  world.addThing ship
 
   document.addEventListener 'keydown', ((event) ->
     switch String.fromCharCode event.which
@@ -143,6 +184,6 @@ document.addEventListener 'DOMContentLoaded', (->
   ), false
 
   setInterval (->
-    scene.render()
+    world.render()
   ), 1000 / 60
 ), false
