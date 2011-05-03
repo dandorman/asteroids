@@ -26,7 +26,7 @@ document.addEventListener 'DOMContentLoaded', (->
       @ctx.translate @quadrant.width, @quadrant.height
 
     addThing: (thing) ->
-      @things.push thing
+      @things.unshift thing
       thing.world = this
 
     drawBackground: ->
@@ -110,8 +110,8 @@ document.addEventListener 'DOMContentLoaded', (->
           @velocity.horizontal += Math.cos @angle
           @velocity.vertical += Math.sin @angle
 
-          if (hypotenuse_squared = Math.pow(@velocity.horizontal, 2) + Math.pow(@velocity.vertical, 2)) > Math.pow(@maxSpeed, 2)
-            hypotenuse = Math.sqrt hypotenuse_squared
+          if (hypotenuseSquared = Math.pow(@velocity.horizontal, 2) + Math.pow(@velocity.vertical, 2)) > Math.pow(@maxSpeed, 2)
+            hypotenuse = Math.sqrt hypotenuseSquared
             @velocity.horizontal = @maxSpeed * @velocity.horizontal / hypotenuse
             @velocity.vertical = @maxSpeed * @velocity.vertical / hypotenuse
 
@@ -134,14 +134,16 @@ document.addEventListener 'DOMContentLoaded', (->
       @x = options.x ? 0
       @y = options.y ? 0
 
-      @alpha = 100
+      @duration = options.duration ? 1000
+
+      @createdAt = new Date().getTime()
       @logged = false
 
     update: ->
-      @alpha -= 1
+      @alpha = 1 - (new Date().getTime() - @createdAt) / @duration
 
     render: (ctx) ->
-      ctx.strokeStyle = "rgba(255, 0, 0, #{@alpha / 100})"
+      ctx.strokeStyle = "rgba(255, 100, 200, #{@alpha})"
       ctx.lineWidth = 2
       ctx.line {x: -1, y: -1}, {x: 1, y: 1}
 
