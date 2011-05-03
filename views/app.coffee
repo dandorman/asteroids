@@ -1,4 +1,7 @@
 document.addEventListener 'DOMContentLoaded', (->
+  animate = do ->
+    requestAnimationFrame ? webkitRequestAnimationFrame ? mozRequestAnimationFrame ? (callback) -> setTimeout(callback, 1000 / 60)
+
   Number::sign = ->
     if this is 0
       0
@@ -56,6 +59,8 @@ document.addEventListener 'DOMContentLoaded', (->
         thing.render @ctx
 
         @ctx.restore()
+
+      animate => @render()
 
   class Ship
     constructor: (options = {}) ->
@@ -185,7 +190,5 @@ document.addEventListener 'DOMContentLoaded', (->
       when 'W' then ship.stopThrusters()
   ), false
 
-  setInterval (->
-    world.render()
-  ), 1000 / 60
+  animate -> world.render()
 ), false
