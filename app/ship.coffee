@@ -64,7 +64,7 @@ class Ship extends Thing
     @world.addThing new Bullet {x: @x + 10 * Math.cos(@angle), y: @y + 10 * Math.sin(@angle), lifespan: 10000, velocity: {horizontal: 10 * Math.cos(@angle), vertical: 10 * Math.sin(@angle)}}
 
   collides_with: (thing) ->
-    if thing.contains({x: @x, y: @y}) then yes else no
+    if thing.contains?({x: @x, y: @y}) then yes else no
 
   reset: ->
     @x = 0

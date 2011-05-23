@@ -1,5 +1,5 @@
 (function() {
-  var Asteroid, Bullet, Exhaust, Ship, Thing, World, animate;
+  var Asteroid, Bullet, Exhaust, Ray, Ship, Thing, World, animate;
   var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
     for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
     function ctor() { this.constructor = child; }
@@ -129,9 +129,6 @@
       this.x += this.velocity.horizontal;
       return this.y += this.velocity.vertical;
     };
-    Thing.prototype.contains = function() {
-      return false;
-    };
     return Thing;
   })();
   Ship = (function() {
@@ -226,10 +223,10 @@
       }));
     };
     Ship.prototype.collides_with = function(thing) {
-      if (thing.contains({
+      if (typeof thing.contains === "function" ? thing.contains({
         x: this.x,
         y: this.y
-      })) {
+      }) : void 0) {
         return true;
       } else {
         return false;
@@ -345,6 +342,21 @@
       }
     }
   };
+  Number.prototype.squared = function() {
+    return Math.pow(this, 2);
+  };
+  Number.prototype.square_root = function() {
+    return Math.sqrt(this);
+  };
+  Number.prototype.arctangent = function() {
+    return Math.atan(this);
+  };
+  Number.prototype.cosine = function() {
+    return Math.cos(this);
+  };
+  Number.prototype.sine = function() {
+    return Math.sin(this);
+  };
   CanvasRenderingContext2D.prototype.line = function(from, to, options) {
     if (options == null) {
       options = {};
@@ -363,23 +375,55 @@
     this.arc(at.x, at.y, radius, 0, 2 * Math.PI, false);
     return this.fill();
   };
+  Ray = (function() {
+    function Ray(a, b, options) {
+      this.a = a;
+      this.b = b;
+      if (options == null) {
+        options = {};
+      }
+      options.x = 0;
+      options.y = 0;
+      Ray.__super__.constructor.call(this, options);
+    }
+    __extends(Ray, Thing);
+    Ray.prototype.render = function(ctx) {
+      var angle, hypotenuse;
+      angle = ((this.b.y - this.a.y) / (this.b.x - this.a.x)).arctangent();
+      if (this.b.x - this.a.x < 0) {
+        angle -= Math.PI;
+      }
+      hypotenuse = ((this.b.y - this.a.y).squared() + (this.b.x - this.a.x).squared()).square_root();
+      ctx.strokeStyle = "rgba(255, 0, 0, 0.5)";
+      return ctx.line({
+        x: this.a.x,
+        y: this.a.y
+      }, {
+        x: this.a.x + 1000 * hypotenuse * angle.cosine(),
+        y: this.a.y + 1000 * hypotenuse * angle.sine()
+      });
+    };
+    return Ray;
+  })();
   document.addEventListener('DOMContentLoaded', (function() {
-    var asteroid, canvas, ship, world;
+    var asteroid, canvas, ray, ship, world;
     canvas = document.getElementsByTagName('canvas')[0];
     canvas.height = window.innerHeight;
     canvas.width = window.innerWidth;
     world = new World(canvas);
     ship = new Ship({
-      x: 0,
-      y: 0,
+      x: 400,
+      y: -100,
       maxSpeed: 3
     });
     world.addThing(ship);
     asteroid = new Asteroid({
-      x: -200,
-      y: -175
+      x: 500,
+      y: -200
     });
     world.addThing(asteroid);
+    ray = new Ray(ship, asteroid);
+    world.addThing(ray);
     document.addEventListener('keydown', (function(event) {
       switch (String.fromCharCode(event.which)) {
         case 'W':

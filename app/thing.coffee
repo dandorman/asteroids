@@ -10,6 +10,3 @@ class Thing
   update: ->
     @x += @velocity.horizontal
     @y += @velocity.vertical
-
-  contains: ->
-    false
