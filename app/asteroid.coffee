@@ -7,7 +7,7 @@ class Asteroid extends Thing
     @angle = 0
 
   update: ->
-    @angle += Math.PI / 100
+    @angle += Math.PI / 120
 
   render: (ctx) ->
     angle = @angle
@@ -33,8 +33,5 @@ class Asteroid extends Thing
     Math.sqrt(Math.pow(@x - point.x, 2) + Math.pow(@y - point.y, 2)) <= @radius
 
   segments: ->
-    return [] if @points.length is 0
-    segs = []
     for index in [0...@points.length]
-      segs.push new Line @points[index], @points[(index + 1) % @points.length]
-    segs
+      new Segment @points[index], @points[(index + 1) % @points.length]

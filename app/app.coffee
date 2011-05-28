@@ -1,41 +1,4 @@
-animate = do ->
-  for fn in ["requestAnimationFrame", "webkitRequestAnimationFrame", "mozRequestAnimationFrame"]
-    return fn if typeof fn is "function"
-  (callback) -> setTimeout(callback, 1000 / 60)
-
-Number::sign = ->
-  if this is 0
-    0
-  else
-    if this > 0 then 1 else -1
-
-Number::squared = -> Math.pow(this, 2)
-Number::square_root = -> Math.sqrt(this)
-
-Number::arctangent = -> Math.atan(this)
-Number::cosine = -> Math.cos(this)
-Number::sine = -> Math.sin(this)
-
-class Line
-  constructor: (@a, @b) ->
-
-  intersection: (line) ->
-    x: ((@a.x * @b.y - @a.y * @b.x) * (line.a.x - line.b.x) - (@a.x - @b.x) * (line.a.x * line.b.y - line.a.y * line.b.x)) / ((@a.x - @b.x) * (line.a.y - line.b.y) - (@a.y - @b.y) * (line.a.x - line.b.x))
-    y: ((@a.x * @b.y - @a.y * @b.x) * (line.a.y - line.b.y) - (@a.y - @b.y) * (line.a.x * line.b.y - line.a.y * line.b.x)) / ((@a.x - @b.x) * (line.a.y - line.b.y) - (@a.y - @b.y) * (line.a.x - line.b.x))
-
-CanvasRenderingContext2D::line = (from, to, options = {}) ->
-  @beginPath()
-  @moveTo from.x, from.y
-  @lineTo to.x, to.y
-  @closePath()
-  @stroke()
-
-CanvasRenderingContext2D::circle = (at, radius, options = {}) ->
-  @beginPath()
-  @arc(at.x, at.y, radius, 0, 2 * Math.PI, false)
-  @fill()
-
-class Ray extends Thing
+class RenderedRay extends Thing
   constructor: (@a, @b, options = {}) ->
     options.x = 0
     options.y = 0
@@ -49,11 +12,12 @@ class Ray extends Thing
     ctx.strokeStyle = "rgba(255, 0, 0, 0.5)"
     ctx.line {x: @a.x, y: @a.y}, {x: @a.x + 1000 * hypotenuse * angle.cosine(), y: @a.y + 1000 * hypotenuse * angle.sine()}
 
-    ray = new Line {x: @a.x, y: @a.y}, {x: @b.x, y: @b.y}
+    ray = new Ray {x: @a.x, y: @a.y}, {x: @b.x, y: @b.y}
     for segment in @b.segments()
       point = ray.intersection(segment)
-      if Math.min(segment.a.x, segment.b.x) <= point.x <= Math.max(segment.a.x, segment.b.x) or (Math.abs(point.x - segment.a.x) <= 0.001 and Math.abs(point.x - segment.b.x) <= 0.001 and Math.min(segment.a.y, segment.b.y) <= point.y <= Math.max(segment.a.y, segment.b.y))
+      if point
         ctx.strokeStyle = "rgba(255, 0, 0, 0.9)"
+        ctx.lineWidth = 3
         ctx.line {x: point.x - 5, y: point.y - 5}, {x: point.x + 5, y: point.y + 5}
         ctx.line {x: point.x - 5, y: point.y + 5}, {x: point.x + 5, y: point.y - 5}
 
@@ -63,13 +27,13 @@ document.addEventListener 'DOMContentLoaded', (->
   canvas.width = window.innerWidth
 
   world = new World canvas
-  ship = new Ship({x: 700, y: -100, maxSpeed: 3})
+  ship = new Ship({x: 200, y: -200, maxSpeed: 3})
   world.addThing ship
 
-  asteroid = new Asteroid({x: 500, y: -200})
+  asteroid = new Asteroid({x: 0, y: 0, radius: 200})
   world.addThing asteroid
 
-  ray = new Ray(ship, asteroid)
+  ray = new RenderedRay(ship, asteroid)
   world.addThing ray
 
   document.addEventListener 'keydown', ((event) ->
