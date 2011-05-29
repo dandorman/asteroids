@@ -71,10 +71,20 @@
       this.b = b;
     }
     Line.prototype.intersection = function(line) {
+      if (this.parallel_to(line)) {
+        return;
+      }
       return {
         x: ((this.a.x * this.b.y - this.a.y * this.b.x) * (line.a.x - line.b.x) - (this.a.x - this.b.x) * (line.a.x * line.b.y - line.a.y * line.b.x)) / ((this.a.x - this.b.x) * (line.a.y - line.b.y) - (this.a.y - this.b.y) * (line.a.x - line.b.x)),
         y: ((this.a.x * this.b.y - this.a.y * this.b.x) * (line.a.y - line.b.y) - (this.a.y - this.b.y) * (line.a.x * line.b.y - line.a.y * line.b.x)) / ((this.a.x - this.b.x) * (line.a.y - line.b.y) - (this.a.y - this.b.y) * (line.a.x - line.b.x))
       };
+    };
+    Line.prototype.slope = function() {
+      var _ref;
+      return this.slope = (_ref = this.slope) != null ? _ref : (this.b.y - this.a.y) / (this.b.x - this.a.x);
+    };
+    Line.prototype.parallel_to = function(line) {
+      return Math.abs(this.slope() - line.slope()) < 0.001;
     };
     return Line;
   })();
@@ -86,10 +96,8 @@
     Segment.prototype.intersection = function(line) {
       var point, _ref, _ref2;
       point = Segment.__super__.intersection.call(this, line);
-      if ((Math.min(this.a.x, this.b.x) <= (_ref = point.x) && _ref <= Math.max(this.a.x, this.b.x)) || (Math.abs(point.x - this.a.x) <= 0.001 && Math.abs(point.x - this.b.x) <= 0.001 && (Math.min(this.a.y, this.b.y) <= (_ref2 = point.y) && _ref2 <= Math.max(this.a.y, this.b.y)))) {
+      if (point && (Math.min(this.a.x, this.b.x) <= (_ref = point.x) && _ref <= Math.max(this.a.x, this.b.x)) || (Math.abs(point.x - this.a.x) <= 0.001 && Math.abs(point.x - this.b.x) <= 0.001 && (Math.min(this.a.y, this.b.y) <= (_ref2 = point.y) && _ref2 <= Math.max(this.a.y, this.b.y)))) {
         return point;
-      } else {
-        return false;
       }
     };
     return Segment;
@@ -102,14 +110,8 @@
     Ray.prototype.intersection = function(line) {
       var point;
       point = line instanceof Segment ? line.intersection(this) : Ray.__super__.intersection.call(this, line);
-      if (point) {
-        if (Math.min(this.a.x, this.b.x, point.x) === this.a.x || Math.max(this.a.x, this.b.x, point.x) === this.a.x) {
-          return point;
-        } else {
-          return false;
-        }
-      } else {
-        return false;
+      if (point && (Math.min(this.a.x, this.b.x, point.x) === this.a.x || Math.max(this.a.x, this.b.x, point.x) === this.a.x)) {
+        return point;
       }
     };
     return Ray;

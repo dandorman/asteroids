@@ -5,10 +5,4 @@ class Ray extends Line
     else
       super(line)
 
-    if point
-      if Math.min(@a.x, @b.x, point.x) == @a.x or Math.max(@a.x, @b.x, point.x) == @a.x
-        point
-      else
-        false
-    else
-      false
+    point if point and (Math.min(@a.x, @b.x, point.x) is @a.x or Math.max(@a.x, @b.x, point.x) is @a.x)
