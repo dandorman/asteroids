@@ -1,5 +1,5 @@
 (function() {
-  var Asteroid, Bullet, Exhaust, Line, Ray, RenderedRay, Segment, Ship, Thing, World, animate;
+  var Asteroid, Bullet, Exhaust, Line, Ray, Segment, Ship, Thing, World, animate;
   var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
     for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
     function ctor() { this.constructor = child; }
@@ -81,7 +81,7 @@
     };
     Line.prototype.slope = function() {
       var _ref;
-      return this.slope = (_ref = this.slope) != null ? _ref : (this.b.y - this.a.y) / (this.b.x - this.a.x);
+      return (_ref = this.slope) != null ? _ref : this.slope = (this.b.y - this.a.y) / (this.b.x - this.a.x);
     };
     Line.prototype.parallel_to = function(line) {
       return Math.abs(this.slope() - line.slope()) < 0.001;
@@ -96,9 +96,14 @@
     Segment.prototype.intersection = function(line) {
       var point, _ref, _ref2;
       point = Segment.__super__.intersection.call(this, line);
-      if (point && (Math.min(this.a.x, this.b.x) <= (_ref = point.x) && _ref <= Math.max(this.a.x, this.b.x)) || (Math.abs(point.x - this.a.x) <= 0.001 && Math.abs(point.x - this.b.x) <= 0.001 && (Math.min(this.a.y, this.b.y) <= (_ref2 = point.y) && _ref2 <= Math.max(this.a.y, this.b.y)))) {
-        return point;
+      if (point) {
+        if ((Math.abs(point.x - this.a.x) > 0.001 && Math.abs(point.x - this.b.x) > 0.001 && (Math.min(this.a.x, this.b.x) <= (_ref = point.x) && _ref <= Math.max(this.a.x, this.b.x))) || (Math.abs(point.x - this.a.x) <= 0.001 && Math.abs(point.x - this.b.x) <= 0.001 && (Math.min(this.a.y, this.b.y) <= (_ref2 = point.y) && _ref2 <= Math.max(this.a.y, this.b.y))) || this.has_endpoint(point)) {
+          return point;
+        }
       }
+    };
+    Segment.prototype.has_endpoint = function(point) {
+      return Math.abs(point.x - this.a.x) <= 0.001 && Math.abs(point.y - this.a.y) <= 0.001 || Math.abs(point.x - this.b.x) <= 0.001 && Math.abs(point.y - this.b.y) <= 0.001;
     };
     return Segment;
   })();
@@ -216,15 +221,18 @@
         }
         this.ctx.translate(thing.x, thing.y);
         thing.render(this.ctx);
-        if (thing instanceof Ship) {
-          _ref4 = this.things;
-          for (_j = 0, _len2 = _ref4.length; _j < _len2; _j++) {
-            other = _ref4[_j];
-            if (other instanceof Ship) {
-              break;
+        _ref4 = this.things;
+        for (_j = 0, _len2 = _ref4.length; _j < _len2; _j++) {
+          other = _ref4[_j];
+          if (other === thing) {
+            break;
+          }
+          if (typeof thing.collides_with === "function" ? thing.collides_with(other) : void 0) {
+            if (typeof thing.collided_with === "function") {
+              thing.collided_with(other);
             }
-            if (thing.collides_with(other)) {
-              console.log("collision!");
+            if (typeof other.collided_with === "function") {
+              other.collided_with(thing);
             }
           }
         }
@@ -402,8 +410,9 @@
       Asteroid.__super__.constructor.call(this, options);
       this.radius = (_ref = options.radius) != null ? _ref : 50;
       this.sides = (_ref2 = options.sides) != null ? _ref2 : 5;
-      this.points = [];
       this.angle = 0;
+      this.strokeStyle = "rgb(200, 200, 200)";
+      this.fillStyle = "rgba(200, 200, 200, 0.67)";
     }
     __extends(Asteroid, Thing);
     Asteroid.prototype.update = function() {
@@ -431,13 +440,37 @@
         ctx.lineTo(x, y);
       }
       ctx.closePath();
-      ctx.strokeStyle = "rgb(200, 200, 200)";
-      ctx.fillStyle = "rgba(200, 200, 200, 0.67)";
+      ctx.strokeStyle = this.strokeStyle;
+      ctx.fillStyle = this.fillStyle;
       ctx.stroke();
       return ctx.fill();
     };
     Asteroid.prototype.contains = function(point) {
-      return Math.sqrt(Math.pow(this.x - point.x, 2) + Math.pow(this.y - point.y, 2)) <= this.radius;
+      var intersection, intersections, ray, segment, unique, _i, _j, _len, _len2, _ref;
+      ray = new Ray(point, {
+        x: this.x,
+        y: this.y
+      });
+      intersections = [];
+      _ref = this.segments();
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        segment = _ref[_i];
+        point = ray.intersection(segment);
+        if (point) {
+          unique = true;
+          for (_j = 0, _len2 = intersections.length; _j < _len2; _j++) {
+            intersection = intersections[_j];
+            if (Math.abs(point.x - intersection.x) < 0.001 && Math.abs(point.y - intersection.y) < 0.001) {
+              unique = false;
+              break;
+            }
+          }
+          if (unique) {
+            intersections.push(point);
+          }
+        }
+      }
+      return intersections.length > 0 && intersections.length % 2;
     };
     Asteroid.prototype.segments = function() {
       var index, _ref, _results;
@@ -447,67 +480,14 @@
       }
       return _results;
     };
+    Asteroid.prototype.collided_with = function(thing) {
+      this.strokeStyle = "rgb(200, 0, 0)";
+      return this.fillStyle = "rgba(200, 0, 0, 0.67)";
+    };
     return Asteroid;
   })();
-  RenderedRay = (function() {
-    function RenderedRay(a, b, options) {
-      this.a = a;
-      this.b = b;
-      if (options == null) {
-        options = {};
-      }
-      options.x = 0;
-      options.y = 0;
-      RenderedRay.__super__.constructor.call(this, options);
-    }
-    __extends(RenderedRay, Thing);
-    RenderedRay.prototype.render = function(ctx) {
-      var angle, hypotenuse, point, ray, segment, _i, _len, _ref, _results;
-      angle = ((this.b.y - this.a.y) / (this.b.x - this.a.x)).arctangent();
-      if (this.b.x - this.a.x < 0) {
-        angle -= Math.PI;
-      }
-      hypotenuse = ((this.b.y - this.a.y).squared() + (this.b.x - this.a.x).squared()).square_root();
-      ctx.strokeStyle = "rgba(255, 0, 0, 0.5)";
-      ctx.line({
-        x: this.a.x,
-        y: this.a.y
-      }, {
-        x: this.a.x + 1000 * hypotenuse * angle.cosine(),
-        y: this.a.y + 1000 * hypotenuse * angle.sine()
-      });
-      ray = new Ray({
-        x: this.a.x,
-        y: this.a.y
-      }, {
-        x: this.b.x,
-        y: this.b.y
-      });
-      _ref = this.b.segments();
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        segment = _ref[_i];
-        point = ray.intersection(segment);
-        _results.push(point ? (ctx.strokeStyle = "rgba(255, 0, 0, 0.9)", ctx.lineWidth = 3, ctx.line({
-          x: point.x - 5,
-          y: point.y - 5
-        }, {
-          x: point.x + 5,
-          y: point.y + 5
-        }), ctx.line({
-          x: point.x - 5,
-          y: point.y + 5
-        }, {
-          x: point.x + 5,
-          y: point.y - 5
-        })) : void 0);
-      }
-      return _results;
-    };
-    return RenderedRay;
-  })();
   document.addEventListener('DOMContentLoaded', (function() {
-    var asteroid, canvas, ray, ship, world;
+    var asteroid, canvas, ship, world;
     canvas = document.getElementsByTagName('canvas')[0];
     canvas.height = window.innerHeight;
     canvas.width = window.innerWidth;
@@ -524,8 +504,6 @@
       radius: 200
     });
     world.addThing(asteroid);
-    ray = new RenderedRay(ship, asteroid);
-    world.addThing(ray);
     document.addEventListener('keydown', (function(event) {
       switch (String.fromCharCode(event.which)) {
         case 'W':

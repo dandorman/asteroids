@@ -49,10 +49,11 @@ class World
       @ctx.translate thing.x, thing.y
       thing.render @ctx
 
-      if thing instanceof Ship
-        for other in @things
-          break if other instanceof Ship
-          console.log("collision!") if thing.collides_with(other)
+      for other in @things
+        break if other is thing
+        if thing.collides_with? other
+          thing.collided_with? other
+          other.collided_with? thing
 
       @ctx.restore()
 

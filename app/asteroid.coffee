@@ -3,8 +3,10 @@ class Asteroid extends Thing
     super(options)
     @radius = options.radius ? 50
     @sides = options.sides ? 5
-    @points = []
     @angle = 0
+
+    @strokeStyle = "rgb(200, 200, 200)"
+    @fillStyle = "rgba(200, 200, 200, 0.67)"
 
   update: ->
     @angle += Math.PI / 120
@@ -24,14 +26,29 @@ class Asteroid extends Thing
       ctx.lineTo(x, y)
 
     ctx.closePath()
-    ctx.strokeStyle = "rgb(200, 200, 200)"
-    ctx.fillStyle = "rgba(200, 200, 200, 0.67)"
+    ctx.strokeStyle = @strokeStyle
+    ctx.fillStyle = @fillStyle
     ctx.stroke()
     ctx.fill()
 
   contains: (point) ->
-    Math.sqrt(Math.pow(@x - point.x, 2) + Math.pow(@y - point.y, 2)) <= @radius
+    ray = new Ray point, {x: @x, y: @y}
+    intersections = []
+    for segment in @segments()
+      point = ray.intersection(segment)
+      if point
+        unique = true
+        for intersection in intersections
+          if Math.abs(point.x - intersection.x) < 0.001 and Math.abs(point.y - intersection.y) < 0.001
+            unique = false
+            break
+        intersections.push point if unique
+    intersections.length > 0 and intersections.length % 2
 
   segments: ->
     for index in [0...@points.length]
       new Segment @points[index], @points[(index + 1) % @points.length]
+
+  collided_with: (thing) ->
+    @strokeStyle = "rgb(200, 0, 0)"
+    @fillStyle = "rgba(200, 0, 0, 0.67)"
