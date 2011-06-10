@@ -89,10 +89,10 @@
     return Line;
   })();
   Segment = (function() {
+    __extends(Segment, Line);
     function Segment() {
       Segment.__super__.constructor.apply(this, arguments);
     }
-    __extends(Segment, Line);
     Segment.prototype.intersection = function(line) {
       var point, _ref, _ref2;
       point = Segment.__super__.intersection.call(this, line);
@@ -108,10 +108,10 @@
     return Segment;
   })();
   Ray = (function() {
+    __extends(Ray, Line);
     function Ray() {
       Ray.__super__.constructor.apply(this, arguments);
     }
-    __extends(Ray, Line);
     Ray.prototype.intersection = function(line) {
       var point;
       point = line instanceof Segment ? line.intersection(this) : Ray.__super__.intersection.call(this, line);
@@ -162,12 +162,12 @@
       return (this.quadrant.width > (_ref = thing.x) && _ref > -this.quadrant.width) && (this.quadrant.height > (_ref2 = thing.y) && _ref2 > -this.quadrant.height);
     };
     World.prototype.drawBackground = function() {
-      var i, _ref, _results;
+      var i, _ref, _results, _step;
       this.ctx.fillStyle = this.bg;
       this.ctx.fillRect(-this.quadrant.width, -this.quadrant.height, this.canvas.width, this.canvas.height);
       this.ctx.strokeStyle = 'rgba(128, 128, 255, 0.5)';
       _results = [];
-      for (i = 0, _ref = Math.max(this.quadrant.height, this.quadrant.width); 0 <= _ref ? i <= _ref : i >= _ref; i += 100) {
+      for (i = 0, _ref = Math.max(this.quadrant.height, this.quadrant.width), _step = 100; 0 <= _ref ? i <= _ref : i >= _ref; i += _step) {
         this.ctx.line({
           x: i,
           y: -this.quadrant.height
@@ -248,6 +248,7 @@
     return World;
   })();
   Ship = (function() {
+    __extends(Ship, Thing);
     function Ship(options) {
       var _ref, _ref2;
       if (options == null) {
@@ -259,7 +260,6 @@
       this.thrusters = null;
       this.wrap = true;
     }
-    __extends(Ship, Thing);
     Ship.prototype.update = function() {
       if (this.thrusters) {
         this.accelerate();
@@ -360,6 +360,7 @@
     return Ship;
   })();
   Exhaust = (function() {
+    __extends(Exhaust, Thing);
     function Exhaust(options) {
       var _ref;
       if (options == null) {
@@ -368,7 +369,6 @@
       Exhaust.__super__.constructor.call(this, options);
       this.lifespan = (_ref = options.lifespan) != null ? _ref : 1000;
     }
-    __extends(Exhaust, Thing);
     Exhaust.prototype.update = function() {
       var percentCompleted;
       percentCompleted = (this.world.now - this.createdAt) / this.lifespan;
@@ -388,10 +388,10 @@
     return Exhaust;
   })();
   Bullet = (function() {
+    __extends(Bullet, Thing);
     function Bullet() {
       Bullet.__super__.constructor.apply(this, arguments);
     }
-    __extends(Bullet, Thing);
     Bullet.prototype.render = function(ctx) {
       ctx.fillStyle = "white";
       return ctx.circle({
@@ -402,6 +402,7 @@
     return Bullet;
   })();
   Asteroid = (function() {
+    __extends(Asteroid, Thing);
     function Asteroid(options) {
       var _ref, _ref2;
       if (options == null) {
@@ -414,7 +415,6 @@
       this.strokeStyle = "rgb(200, 200, 200)";
       this.fillStyle = "rgba(200, 200, 200, 0.67)";
     }
-    __extends(Asteroid, Thing);
     Asteroid.prototype.update = function() {
       return this.angle += Math.PI / 120;
     };
