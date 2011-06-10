@@ -30,9 +30,11 @@ class Asteroid extends Thing
     ctx.fillStyle = @fillStyle
     ctx.stroke()
     ctx.fill()
-
   contains: (point) ->
-    ray = new Ray point, {x: @x, y: @y}
+    current_position = @position()
+    return false if distance_between_points(point, current_position) > @radius
+
+    ray = new Ray point, current_position
     intersections = []
     for segment in @segments()
       point = ray.intersection(segment)

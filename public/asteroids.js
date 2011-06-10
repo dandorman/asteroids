@@ -1,5 +1,5 @@
 (function() {
-  var Asteroid, Bullet, Exhaust, Line, Ray, Segment, Ship, Thing, World, animate;
+  var Asteroid, Bullet, Exhaust, Line, Ray, Segment, Ship, Thing, World, animate, distance_between_points, within;
   var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
     for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
     function ctor() { this.constructor = child; }
@@ -21,6 +21,15 @@
       return setTimeout(callback, 1000 / 60);
     };
   })();
+  distance_between_points = function(a, b) {
+    return ((a.x - b.x).squared() + (a.y - b.y).squared()).square_root();
+  };
+  within = function(a, b, delta) {
+    if (delta == null) {
+      delta = 0.001;
+    }
+    return (a - b).abs() <= delta;
+  };
   Number.prototype.sign = function() {
     if (this === 0) {
       return 0;
@@ -31,6 +40,9 @@
         return -1;
       }
     }
+  };
+  Number.prototype.abs = function() {
+    return Math.abs(this);
   };
   Number.prototype.squared = function() {
     return Math.pow(this, 2);
@@ -71,12 +83,16 @@
       this.b = b;
     }
     Line.prototype.intersection = function(line) {
+      var cross_product_a, cross_product_b, denominator;
       if (this.parallel_to(line)) {
         return;
       }
+      cross_product_a = this.a.x * this.b.y - this.a.y * this.b.x;
+      cross_product_b = line.a.x * line.b.y - line.a.y * line.b.x;
+      denominator = (this.a.x - this.b.x) * (line.a.y - line.b.y) - (this.a.y - this.b.y) * (line.a.x - line.b.x);
       return {
-        x: ((this.a.x * this.b.y - this.a.y * this.b.x) * (line.a.x - line.b.x) - (this.a.x - this.b.x) * (line.a.x * line.b.y - line.a.y * line.b.x)) / ((this.a.x - this.b.x) * (line.a.y - line.b.y) - (this.a.y - this.b.y) * (line.a.x - line.b.x)),
-        y: ((this.a.x * this.b.y - this.a.y * this.b.x) * (line.a.y - line.b.y) - (this.a.y - this.b.y) * (line.a.x * line.b.y - line.a.y * line.b.x)) / ((this.a.x - this.b.x) * (line.a.y - line.b.y) - (this.a.y - this.b.y) * (line.a.x - line.b.x))
+        x: (cross_product_a * (line.a.x - line.b.x) - (this.a.x - this.b.x) * cross_product_b) / denominator,
+        y: (cross_product_a * (line.a.y - line.b.y) - (this.a.y - this.b.y) * cross_product_b) / denominator
       };
     };
     Line.prototype.slope = function() {
@@ -109,7 +125,7 @@
       }
     };
     Segment.prototype.has_endpoint = function(point) {
-      return Math.abs(point.x - this.a.x) <= 0.001 && Math.abs(point.y - this.a.y) <= 0.001 || Math.abs(point.x - this.b.x) <= 0.001 && Math.abs(point.y - this.b.y) <= 0.001;
+      return (point.x - this.a.x).abs() <= 0.001 && (point.y - this.a.y).abs() <= 0.001 || (point.x - this.b.x).abs() <= 0.001 && (point.y - this.b.y).abs() <= 0.001;
     };
     return Segment;
   })();
@@ -129,13 +145,13 @@
   })();
   Thing = (function() {
     function Thing(options) {
-      var _ref;
+      var _ref, _ref2, _ref3;
       if (options == null) {
         options = {};
       }
-      this.x = options.x;
-      this.y = options.y;
-      this.velocity = (_ref = options.velocity) != null ? _ref : {
+      this.x = (_ref = options.x) != null ? _ref : 0;
+      this.y = (_ref2 = options.y) != null ? _ref2 : 0;
+      this.velocity = (_ref3 = options.velocity) != null ? _ref3 : {
         horizontal: 0,
         vertical: 0
       };
@@ -144,6 +160,12 @@
     Thing.prototype.update = function() {
       this.x += this.velocity.horizontal;
       return this.y += this.velocity.vertical;
+    };
+    Thing.prototype.position = function() {
+      return {
+        x: this.x,
+        y: this.y
+      };
     };
     return Thing;
   })();
@@ -452,11 +474,12 @@
       return ctx.fill();
     };
     Asteroid.prototype.contains = function(point) {
-      var intersection, intersections, ray, segment, unique, _i, _j, _len, _len2, _ref;
-      ray = new Ray(point, {
-        x: this.x,
-        y: this.y
-      });
+      var current_position, intersection, intersections, ray, segment, unique, _i, _j, _len, _len2, _ref;
+      current_position = this.position();
+      if (distance_between_points(point, current_position) > this.radius) {
+        return false;
+      }
+      ray = new Ray(point, current_position);
       intersections = [];
       _ref = this.segments();
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
