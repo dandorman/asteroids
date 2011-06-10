@@ -1,7 +1,7 @@
 class Thing
   constructor: (options = {}) ->
-    @x = options.x
-    @y = options.y
+    @x = options.x ? 0
+    @y = options.y ? 0
 
     @velocity = options.velocity ? {horizontal: 0, vertical: 0}
 
@@ -10,3 +10,7 @@ class Thing
   update: ->
     @x += @velocity.horizontal
     @y += @velocity.vertical
+
+  position: ->
+    x: @x
+    y: @y
