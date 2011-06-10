@@ -1,0 +1,9 @@
+src_files:
+  - app/javascripts/*.js
+  - app/models/*.coffee
+# helpers:
+#   - helpers/**/*.{js,coffee}
+spec_files:
+  - "models/*[Ss]pec.{js,coffee}"
+src_dir:
+spec_dir: spec

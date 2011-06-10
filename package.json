@@ -1,0 +1,13 @@
+{
+  "name": "asteroids",
+  "description": "HTML5 Asteroids",
+  "version": "0.0.1",
+  "dependencies": {
+    "express": ">= 2.3.9"
+    "socket.io": ">= 0.6.18",
+    "spine": ">= 0.0.4"
+  },
+  "private": "true",
+  "main": "server",
+  "engines": { "node": "*" }
+}
