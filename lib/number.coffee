@@ -4,6 +4,8 @@ Number::sign = ->
   else
     if this > 0 then 1 else -1
 
+Number::abs = -> Math.abs(@)
+
 Number::squared = -> Math.pow(this, 2)
 Number::square_root = -> Math.sqrt(this)
 
