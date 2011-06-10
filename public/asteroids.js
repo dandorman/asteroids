@@ -86,6 +86,12 @@
     Line.prototype.parallel_to = function(line) {
       return Math.abs(this.slope() - line.slope()) < 0.001;
     };
+    Line.prototype.horizontal = function() {
+      return Math.abs(this.a.y - this.b.y) < 0.001;
+    };
+    Line.prototype.vertical = function() {
+      return Math.abs(this.a.x - this.b.x) < 0.001;
+    };
     return Line;
   })();
   Segment = (function() {
@@ -97,7 +103,7 @@
       var point, _ref, _ref2;
       point = Segment.__super__.intersection.call(this, line);
       if (point) {
-        if ((Math.abs(point.x - this.a.x) > 0.001 && Math.abs(point.x - this.b.x) > 0.001 && (Math.min(this.a.x, this.b.x) <= (_ref = point.x) && _ref <= Math.max(this.a.x, this.b.x))) || (Math.abs(point.x - this.a.x) <= 0.001 && Math.abs(point.x - this.b.x) <= 0.001 && (Math.min(this.a.y, this.b.y) <= (_ref2 = point.y) && _ref2 <= Math.max(this.a.y, this.b.y))) || this.has_endpoint(point)) {
+        if ((!this.vertical() && (Math.min(this.a.x, this.b.x) <= (_ref = point.x) && _ref <= Math.max(this.a.x, this.b.x))) || (!this.horizontal() && (Math.min(this.a.y, this.b.y) <= (_ref2 = point.y) && _ref2 <= Math.max(this.a.y, this.b.y))) || this.has_endpoint(point)) {
           return point;
         }
       }

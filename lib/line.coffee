@@ -12,3 +12,9 @@ class Line
 
   parallel_to: (line) ->
     Math.abs(@slope() - line.slope()) < 0.001
+
+  horizontal: ->
+    Math.abs(@a.y - @b.y) < 0.001
+
+  vertical: ->
+    Math.abs(@a.x - @b.x) < 0.001
