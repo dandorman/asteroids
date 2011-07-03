@@ -7,8 +7,11 @@ document.addEventListener 'DOMContentLoaded', (->
   ship = new Ship({x: 200, y: -200, maxSpeed: 3})
   world.addThing ship
 
-  asteroid = new Asteroid({x: 0, y: 0, radius: 200})
+  asteroid = new Asteroid x: 0, y: 0, radius: 100, sides: 9, velocity: horizontal: -0.75, vertical: 0.5
   world.addThing asteroid
+
+  asteroid2 = new Asteroid x: -500, y: -200, radius: 125, sides: 7, velocity: horizontal: 0.25, vertical: 0
+  world.addThing asteroid2
 
   document.addEventListener 'keydown', ((event) ->
     switch String.fromCharCode event.which

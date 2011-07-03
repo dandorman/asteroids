@@ -9,6 +9,7 @@ class Asteroid extends Thing
     @fillStyle = "rgba(200, 200, 200, 0.67)"
 
   update: ->
+    super()
     @angle += Math.PI / 120
 
   render: (ctx) ->
@@ -50,7 +51,3 @@ class Asteroid extends Thing
   segments: ->
     for index in [0...@points.length]
       new Segment @points[index], @points[(index + 1) % @points.length]
-
-  collided_with: (thing) ->
-    @strokeStyle = "rgb(200, 0, 0)"
-    @fillStyle = "rgba(200, 0, 0, 0.67)"

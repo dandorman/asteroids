@@ -66,6 +66,10 @@ class Ship extends Thing
   collides_with: (thing) ->
     if thing.contains?({x: @x, y: @y}) then yes else no
 
+  collided_with: (thing) ->
+    @cull = true
+    @world.addThing new Explosion x: @x, y: @y
+
   reset: ->
     @x = 0
     @y = 0

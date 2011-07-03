@@ -2,7 +2,7 @@ class Segment extends Line
   intersection: (line) ->
     point = super(line)
     if point
-      if (not @vertical() and Math.min(@a.x, @b.x) <= point.x <= Math.max(@a.x, @b.x)) or (not @horizontal() and Math.min(@a.y, @b.y) <= point.y <= Math.max(@a.y, @b.y)) or @has_endpoint(point)
+      if (Math.min(@a.x, @b.x) <= point.x <= Math.max(@a.x, @b.x) unless @vertical()) or (Math.min(@a.y, @b.y) <= point.y <= Math.max(@a.y, @b.y) unless @horizontal()) or @has_endpoint(point)
         point
 
   has_endpoint: (point) ->

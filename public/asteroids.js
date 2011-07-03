@@ -1,5 +1,5 @@
 (function() {
-  var Asteroid, Bullet, Exhaust, Line, Ray, Segment, Ship, Thing, World, animate, distance_between_points, within;
+  var Asteroid, Bullet, Exhaust, Explosion, Line, Ray, Segment, Ship, Thing, World, animate, distance_between_points, root, within;
   var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
     for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
     function ctor() { this.constructor = child; }
@@ -119,7 +119,7 @@
       var point, _ref, _ref2;
       point = Segment.__super__.intersection.call(this, line);
       if (point) {
-        if ((!this.vertical() && (Math.min(this.a.x, this.b.x) <= (_ref = point.x) && _ref <= Math.max(this.a.x, this.b.x))) || (!this.horizontal() && (Math.min(this.a.y, this.b.y) <= (_ref2 = point.y) && _ref2 <= Math.max(this.a.y, this.b.y))) || this.has_endpoint(point)) {
+        if ((!this.vertical() ? (Math.min(this.a.x, this.b.x) <= (_ref = point.x) && _ref <= Math.max(this.a.x, this.b.x)) : void 0) || (!this.horizontal() ? (Math.min(this.a.y, this.b.y) <= (_ref2 = point.y) && _ref2 <= Math.max(this.a.y, this.b.y)) : void 0) || this.has_endpoint(point)) {
           return point;
         }
       }
@@ -143,6 +143,7 @@
     };
     return Ray;
   })();
+  root = typeof exports !== "undefined" && exports !== null ? exports : this;
   Thing = (function() {
     function Thing(options) {
       var _ref, _ref2, _ref3;
@@ -169,6 +170,7 @@
     };
     return Thing;
   })();
+  root.Thing = Thing;
   World = (function() {
     function World(canvas) {
       this.canvas = canvas;
@@ -376,6 +378,13 @@
         return false;
       }
     };
+    Ship.prototype.collided_with = function(thing) {
+      this.cull = true;
+      return this.world.addThing(new Explosion({
+        x: this.x,
+        y: this.y
+      }));
+    };
     Ship.prototype.reset = function() {
       this.x = 0;
       this.y = 0;
@@ -429,6 +438,39 @@
     };
     return Bullet;
   })();
+  Explosion = (function() {
+    __extends(Explosion, Thing);
+    function Explosion() {
+      Explosion.__super__.constructor.apply(this, arguments);
+    }
+    Explosion.prototype.update = function() {
+      var _ref, _ref2;
+      Explosion.__super__.update.call(this);
+            if ((_ref = this.opacity) != null) {
+        _ref;
+      } else {
+        this.opacity = 1.0;
+      };
+      this.opacity *= 0.9;
+            if ((_ref2 = this.radius) != null) {
+        _ref2;
+      } else {
+        this.radius = 10;
+      };
+      this.radius *= 1.1;
+      if (this.radius > 100) {
+        return this.cull = true;
+      }
+    };
+    Explosion.prototype.render = function(ctx) {
+      ctx.fillStyle = "rgba(255, 64, 0, " + this.opacity + ")";
+      return ctx.circle({
+        x: 0,
+        y: 0
+      }, this.radius);
+    };
+    return Explosion;
+  })();
   Asteroid = (function() {
     __extends(Asteroid, Thing);
     function Asteroid(options) {
@@ -444,6 +486,7 @@
       this.fillStyle = "rgba(200, 200, 200, 0.67)";
     }
     Asteroid.prototype.update = function() {
+      Asteroid.__super__.update.call(this);
       return this.angle += Math.PI / 120;
     };
     Asteroid.prototype.render = function(ctx) {
@@ -509,14 +552,10 @@
       }
       return _results;
     };
-    Asteroid.prototype.collided_with = function(thing) {
-      this.strokeStyle = "rgb(200, 0, 0)";
-      return this.fillStyle = "rgba(200, 0, 0, 0.67)";
-    };
     return Asteroid;
   })();
   document.addEventListener('DOMContentLoaded', (function() {
-    var asteroid, canvas, ship, world;
+    var asteroid, asteroid2, canvas, ship, world;
     canvas = document.getElementsByTagName('canvas')[0];
     canvas.height = window.innerHeight;
     canvas.width = window.innerWidth;
@@ -530,9 +569,25 @@
     asteroid = new Asteroid({
       x: 0,
       y: 0,
-      radius: 200
+      radius: 100,
+      sides: 9,
+      velocity: {
+        horizontal: -0.75,
+        vertical: 0.5
+      }
     });
     world.addThing(asteroid);
+    asteroid2 = new Asteroid({
+      x: -500,
+      y: -200,
+      radius: 125,
+      sides: 7,
+      velocity: {
+        horizontal: 0.25,
+        vertical: 0
+      }
+    });
+    world.addThing(asteroid2);
     document.addEventListener('keydown', (function(event) {
       switch (String.fromCharCode(event.which)) {
         case 'W':
