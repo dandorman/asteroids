@@ -31,6 +31,7 @@ class Asteroid extends Thing
     ctx.fillStyle = @fillStyle
     ctx.stroke()
     ctx.fill()
+
   contains: (point) ->
     current_position = @position()
     return false if distance_between_points(point, current_position) > @radius
@@ -51,3 +52,8 @@ class Asteroid extends Thing
   segments: ->
     for index in [0...@points.length]
       new Segment @points[index], @points[(index + 1) % @points.length]
+
+  collided_with: (thing) ->
+    if thing instanceof Bullet
+      @radius -= 10
+      @cull = true if @radius <= 50

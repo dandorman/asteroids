@@ -1,13 +1,19 @@
 class Explosion extends Thing
+  constructor: (options = {}) ->
+    super(options)
+
+    @maxRadius = options.radius ? 100
+    @duration = options.duration ? 500
+
   update: ->
     super()
-    @opacity ?= 1.0
-    @opacity *= 0.9
 
-    @radius ?= 10
-    @radius *= 1.1
+    elapsed = +(new Date()) - @createdAt
 
-    @cull = true if @radius > 100
+    @radius = @maxRadius * elapsed / @duration
+    @opacity = 1.0 - elapsed / @duration
+
+    @cull = true if elapsed > @duration
 
   render: (ctx) ->
     ctx.fillStyle = "rgba(255, 64, 0, #{@opacity})"

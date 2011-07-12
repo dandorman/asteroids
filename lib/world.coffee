@@ -50,7 +50,7 @@ class World
       thing.render @ctx
 
       for other in @things
-        break if other is thing
+        continue if other is thing or !(other instanceof Asteroid)
         if thing.collides_with? other
           thing.collided_with? other
           other.collided_with? thing

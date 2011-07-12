@@ -1,5 +1,5 @@
 (function() {
-  var Asteroid, Bullet, Exhaust, Explosion, Line, Ray, Segment, Ship, Thing, World, animate, distance_between_points, root, within;
+  var Asteroid, Bullet, Exhaust, Explosion, Line, Ray, Segment, Ship, Thing, World, animate, distance_between_points, within;
   var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
     for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
     function ctor() { this.constructor = child; }
@@ -143,7 +143,6 @@
     };
     return Ray;
   })();
-  root = typeof exports !== "undefined" && exports !== null ? exports : this;
   Thing = (function() {
     function Thing(options) {
       var _ref, _ref2, _ref3;
@@ -170,7 +169,6 @@
     };
     return Thing;
   })();
-  root.Thing = Thing;
   World = (function() {
     function World(canvas) {
       this.canvas = canvas;
@@ -254,8 +252,8 @@
         _ref4 = this.things;
         for (_j = 0, _len2 = _ref4.length; _j < _len2; _j++) {
           other = _ref4[_j];
-          if (other === thing) {
-            break;
+          if (other === thing || !(other instanceof Asteroid)) {
+            continue;
           }
           if (typeof thing.collides_with === "function" ? thing.collides_with(other) : void 0) {
             if (typeof thing.collided_with === "function") {
@@ -369,14 +367,10 @@
       }));
     };
     Ship.prototype.collides_with = function(thing) {
-      if (typeof thing.contains === "function" ? thing.contains({
+      return typeof thing.contains === "function" ? thing.contains({
         x: this.x,
         y: this.y
-      }) : void 0) {
-        return true;
-      } else {
-        return false;
-      }
+      }) : void 0;
     };
     Ship.prototype.collided_with = function(thing) {
       this.cull = true;
@@ -436,29 +430,35 @@
         y: 0
       }, 2);
     };
+    Bullet.prototype.collides_with = function(thing) {
+      return typeof thing.contains === "function" ? thing.contains({
+        x: this.x,
+        y: this.y
+      }) : void 0;
+    };
+    Bullet.prototype.collided_with = function(thing) {
+      return this.cull = true;
+    };
     return Bullet;
   })();
   Explosion = (function() {
     __extends(Explosion, Thing);
-    function Explosion() {
-      Explosion.__super__.constructor.apply(this, arguments);
+    function Explosion(options) {
+      var _ref, _ref2;
+      if (options == null) {
+        options = {};
+      }
+      Explosion.__super__.constructor.call(this, options);
+      this.maxRadius = (_ref = options.radius) != null ? _ref : 100;
+      this.duration = (_ref2 = options.duration) != null ? _ref2 : 500;
     }
     Explosion.prototype.update = function() {
-      var _ref, _ref2;
+      var elapsed;
       Explosion.__super__.update.call(this);
-            if ((_ref = this.opacity) != null) {
-        _ref;
-      } else {
-        this.opacity = 1.0;
-      };
-      this.opacity *= 0.9;
-            if ((_ref2 = this.radius) != null) {
-        _ref2;
-      } else {
-        this.radius = 10;
-      };
-      this.radius *= 1.1;
-      if (this.radius > 100) {
+      elapsed = +(new Date()) - this.createdAt;
+      this.radius = this.maxRadius * elapsed / this.duration;
+      this.opacity = 1.0 - elapsed / this.duration;
+      if (elapsed > this.duration) {
         return this.cull = true;
       }
     };
@@ -551,6 +551,14 @@
         _results.push(new Segment(this.points[index], this.points[(index + 1) % this.points.length]));
       }
       return _results;
+    };
+    Asteroid.prototype.collided_with = function(thing) {
+      if (thing instanceof Bullet) {
+        this.radius -= 10;
+        if (this.radius <= 50) {
+          return this.cull = true;
+        }
+      }
     };
     return Asteroid;
   })();

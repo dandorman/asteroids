@@ -1,5 +1,3 @@
-root = exports ? @
-
 class Thing
   constructor: (options = {}) ->
     @x = options.x ? 0
@@ -16,5 +14,3 @@ class Thing
   position: ->
     x: @x
     y: @y
-
-root.Thing = Thing
