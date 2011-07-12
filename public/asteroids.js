@@ -1,5 +1,5 @@
 (function() {
-  var Asteroid, Bullet, Exhaust, Explosion, Line, Ray, Segment, Ship, Thing, World, animate, distance_between_points, within;
+  var Asteroid, Bullet, Exhaust, Explosion, Line, Ray, Segment, Ship, Thing, World, addAsteroid, animate, distance_between_points, within;
   var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
     for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
     function ctor() { this.constructor = child; }
@@ -562,40 +562,50 @@
     };
     return Asteroid;
   })();
+  addAsteroid = (function() {
+    var pending;
+    pending = false;
+    return function(world) {
+      if (!pending) {
+        pending = true;
+        return setTimeout(function() {
+          var asteroid;
+          asteroid = new Asteroid({
+            x: Math.floor(Math.random() * world.canvas.width) - world.quadrant.width,
+            y: Math.floor(Math.random() * world.canvas.height) - world.quadrant.height,
+            radius: Math.floor(Math.random() * 50) + 100,
+            sides: Math.floor(Math.random() * 5) + 5,
+            velocity: {
+              horizontal: Math.random() * 2 - 1,
+              vertical: Math.random() * 2 - 1
+            }
+          });
+          world.addThing(asteroid);
+          return pending = false;
+        }, 3000);
+      }
+    };
+  })();
   document.addEventListener('DOMContentLoaded', (function() {
-    var asteroid, asteroid2, canvas, ship, world;
+    var canvas, ship, world;
     canvas = document.getElementsByTagName('canvas')[0];
     canvas.height = window.innerHeight;
     canvas.width = window.innerWidth;
     world = new World(canvas);
     ship = new Ship({
-      x: 200,
-      y: -200,
+      x: 0,
+      y: 0,
       maxSpeed: 3
     });
     world.addThing(ship);
-    asteroid = new Asteroid({
-      x: 0,
-      y: 0,
-      radius: 100,
-      sides: 9,
-      velocity: {
-        horizontal: -0.75,
-        vertical: 0.5
-      }
-    });
-    world.addThing(asteroid);
-    asteroid2 = new Asteroid({
-      x: -500,
-      y: -200,
-      radius: 125,
-      sides: 7,
-      velocity: {
-        horizontal: 0.25,
-        vertical: 0
-      }
-    });
-    world.addThing(asteroid2);
+    world.render = (function() {
+      var oldRender;
+      oldRender = world.render;
+      return function() {
+        addAsteroid(world);
+        return oldRender.call(world);
+      };
+    })();
     document.addEventListener('keydown', (function(event) {
       switch (String.fromCharCode(event.which)) {
         case 'W':
