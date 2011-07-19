@@ -186,8 +186,9 @@
       return thing.world = this;
     };
     World.prototype.contains = function(thing) {
-      var _ref, _ref2;
-      return (this.quadrant.width > (_ref = thing.x) && _ref > -this.quadrant.width) && (this.quadrant.height > (_ref2 = thing.y) && _ref2 > -this.quadrant.height);
+      var height, width, _ref, _ref2, _ref3, _ref4, _ref5;
+      _ref3 = [this.quadrant.width + ((_ref = thing.radius) != null ? _ref : 0), this.quadrant.height + ((_ref2 = thing.radius) != null ? _ref2 : 0)], width = _ref3[0], height = _ref3[1];
+      return (width > (_ref4 = thing.x) && _ref4 > -width) && (height > (_ref5 = thing.y) && _ref5 > -height);
     };
     World.prototype.drawBackground = function() {
       var i, _ref, _results, _step;
@@ -437,6 +438,19 @@
       }) : void 0;
     };
     Bullet.prototype.collided_with = function(thing) {
+      if (thing instanceof Asteroid && !this.cull) {
+        this.world.addThing(new Explosion({
+          x: this.x,
+          y: this.y,
+          duration: 250,
+          radius: 20,
+          color: {
+            r: 255,
+            g: 239,
+            b: 0
+          }
+        }));
+      }
       return this.cull = true;
     };
     return Bullet;
@@ -444,13 +458,18 @@
   Explosion = (function() {
     __extends(Explosion, Thing);
     function Explosion(options) {
-      var _ref, _ref2;
+      var _ref, _ref2, _ref3;
       if (options == null) {
         options = {};
       }
       Explosion.__super__.constructor.call(this, options);
       this.maxRadius = (_ref = options.radius) != null ? _ref : 100;
       this.duration = (_ref2 = options.duration) != null ? _ref2 : 500;
+      this.color = (_ref3 = options.color) != null ? _ref3 : {
+        r: 255,
+        g: 64,
+        b: 0
+      };
     }
     Explosion.prototype.update = function() {
       var elapsed;
@@ -463,7 +482,7 @@
       }
     };
     Explosion.prototype.render = function(ctx) {
-      ctx.fillStyle = "rgba(255, 64, 0, " + this.opacity + ")";
+      ctx.fillStyle = "rgba(" + this.color.r + ", " + this.color.g + ", " + this.color.b + ", " + this.opacity + ")";
       return ctx.circle({
         x: 0,
         y: 0
@@ -474,7 +493,7 @@
   Asteroid = (function() {
     __extends(Asteroid, Thing);
     function Asteroid(options) {
-      var _ref, _ref2;
+      var _ref, _ref2, _ref3;
       if (options == null) {
         options = {};
       }
@@ -482,12 +501,13 @@
       this.radius = (_ref = options.radius) != null ? _ref : 50;
       this.sides = (_ref2 = options.sides) != null ? _ref2 : 5;
       this.angle = 0;
+      this.rateOfRotation = (_ref3 = options.rateOfRotation) != null ? _ref3 : 120;
       this.strokeStyle = "rgb(200, 200, 200)";
       this.fillStyle = "rgba(200, 200, 200, 0.67)";
     }
     Asteroid.prototype.update = function() {
       Asteroid.__super__.update.call(this);
-      return this.angle += Math.PI / 120;
+      return this.angle += Math.PI / this.rateOfRotation;
     };
     Asteroid.prototype.render = function(ctx) {
       var angle, side, x, y, _ref, _ref2, _ref3;
@@ -565,24 +585,32 @@
   addAsteroid = (function() {
     var pending;
     pending = false;
-    return function(world) {
+    return function(world, ship) {
       if (!pending) {
         pending = true;
         return setTimeout(function() {
-          var asteroid;
+          var asteroid, radius, x, y, _ref;
+          radius = Math.floor(Math.random() * 50) + 100;
+          while (distance_between_points({
+              x: x != null ? x : ship.x,
+              y: y != null ? y : ship.y
+            }, ship.position()) < 50 + radius) {
+            _ref = [Math.floor(Math.random() * world.canvas.width) - world.quadrant.width, Math.floor(Math.random() * world.canvas.height) - world.quadrant.height], x = _ref[0], y = _ref[1];
+          }
           asteroid = new Asteroid({
-            x: Math.floor(Math.random() * world.canvas.width) - world.quadrant.width,
-            y: Math.floor(Math.random() * world.canvas.height) - world.quadrant.height,
-            radius: Math.floor(Math.random() * 50) + 100,
+            x: x,
+            y: y,
+            radius: radius,
             sides: Math.floor(Math.random() * 5) + 5,
+            rateOfRotation: Math.floor(Math.random() * 60) + 80,
             velocity: {
-              horizontal: Math.random() * 2 - 1,
-              vertical: Math.random() * 2 - 1
+              horizontal: Math.random() * 4 - 2,
+              vertical: Math.random() * 4 - 2
             }
           });
           world.addThing(asteroid);
           return pending = false;
-        }, 3000);
+        }, (Math.floor(Math.random() * 3) + 1) * 1000);
       }
     };
   })();
@@ -602,22 +630,25 @@
       var oldRender;
       oldRender = world.render;
       return function() {
-        addAsteroid(world);
+        addAsteroid(world, ship);
         return oldRender.call(world);
       };
     })();
     document.addEventListener('keydown', (function(event) {
-      switch (String.fromCharCode(event.which)) {
-        case 'W':
-          return ship.fireThrusters();
-        case 'A':
-          return ship.turnLeft();
-        case 'D':
-          return ship.turnRight();
-        case 'X':
-          return ship.reset();
-        case ' ':
-          return ship.fire();
+      var charCode;
+      charCode = String.fromCharCode(event.which);
+      if (charCode === 'W' || charCode === 'A' || charCode === 'D' || charCode === ' ') {
+        event.preventDefault();
+        switch (String.fromCharCode(event.which)) {
+          case 'W':
+            return ship.fireThrusters();
+          case 'A':
+            return ship.turnLeft();
+          case 'D':
+            return ship.turnRight();
+          case ' ':
+            return ship.fire();
+        }
       }
     }), false);
     document.addEventListener('keyup', (function(event) {

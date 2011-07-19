@@ -16,7 +16,11 @@ class World
     thing.world = this
 
   contains: (thing) ->
-    @quadrant.width > thing.x > -@quadrant.width and @quadrant.height > thing.y > -@quadrant.height
+    [width, height] = [
+      @quadrant.width + (thing.radius ? 0)
+      @quadrant.height + (thing.radius ? 0)
+    ]
+    width > thing.x > -width and height > thing.y > -height
 
   drawBackground: ->
     @ctx.fillStyle = @bg

@@ -4,6 +4,7 @@ class Explosion extends Thing
 
     @maxRadius = options.radius ? 100
     @duration = options.duration ? 500
+    @color = options.color ? {r: 255, g: 64, b: 0}
 
   update: ->
     super()
@@ -16,5 +17,5 @@ class Explosion extends Thing
     @cull = true if elapsed > @duration
 
   render: (ctx) ->
-    ctx.fillStyle = "rgba(255, 64, 0, #{@opacity})"
+    ctx.fillStyle = "rgba(#{@color.r}, #{@color.g}, #{@color.b}, #{@opacity})"
     ctx.circle({x: 0, y: 0}, @radius)

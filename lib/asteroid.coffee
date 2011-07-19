@@ -4,13 +4,14 @@ class Asteroid extends Thing
     @radius = options.radius ? 50
     @sides = options.sides ? 5
     @angle = 0
+    @rateOfRotation = options.rateOfRotation ? 120
 
     @strokeStyle = "rgb(200, 200, 200)"
     @fillStyle = "rgba(200, 200, 200, 0.67)"
 
   update: ->
     super()
-    @angle += Math.PI / 120
+    @angle += Math.PI / @rateOfRotation
 
   render: (ctx) ->
     angle = @angle
