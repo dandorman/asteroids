@@ -45,6 +45,7 @@ io.sockets.on 'connection', (socket) ->
 
   new_thing.yours = true
   socket.emit 'add', things
+  socket.set 'ship_id', next_thing_id
   delete new_thing.yours
 
   socket.on 'update', (data) ->
@@ -54,3 +55,8 @@ io.sockets.on 'connection', (socket) ->
     thing.angle = data.angle
     thing.velocity = data.velocity
     socket.broadcast.emit 'update', data
+
+  socket.on 'disconnect', ->
+    socket.get 'ship_id', (err, ship_id) ->
+      delete things[ship_id]
+      socket.broadcast.emit 'delete', ship_id

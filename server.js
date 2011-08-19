@@ -60,8 +60,9 @@
     socket.broadcast.emit('add', tmp);
     new_thing.yours = true;
     socket.emit('add', things);
+    socket.set('ship_id', next_thing_id);
     delete new_thing.yours;
-    return socket.on('update', function(data) {
+    socket.on('update', function(data) {
       var thing;
       thing = things[data.id];
       thing.x = data.position.x;
@@ -69,6 +70,12 @@
       thing.angle = data.angle;
       thing.velocity = data.velocity;
       return socket.broadcast.emit('update', data);
+    });
+    return socket.on('disconnect', function() {
+      return socket.get('ship_id', function(err, ship_id) {
+        delete things[ship_id];
+        return socket.broadcast.emit('delete', ship_id);
+      });
     });
   });
 }).call(this);

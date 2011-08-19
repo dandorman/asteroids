@@ -49,11 +49,14 @@ document.addEventListener 'DOMContentLoaded', (->
 
   socket.on 'update', (data) ->
     thing = world.getThing data.id
-    console.log(thing, data)
     thing.x = data.position.x
     thing.y = data.position.y
     thing.angle = data.angle
     thing.velocity = data.velocity
+
+  socket.on 'delete', (id) ->
+    thing = world.getThing id
+    thing.cull = true
 
   document.addEventListener 'keydown', ((event) ->
     return unless ship
@@ -67,6 +70,8 @@ document.addEventListener 'DOMContentLoaded', (->
         when 'D' then ship.turnRight()
         when ' ' then ship.fire()
   ), false
+
+  setInterval (-> blurgh do -> ship), 1000
 
   document.addEventListener 'keyup', ((event) ->
     return unless ship

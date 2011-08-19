@@ -368,10 +368,12 @@
       };
     })();
     Ship.prototype.turnLeft = function() {
-      return this.angle -= Math.PI / 12;
+      this.angle -= Math.PI / 12;
+      return blurgh(this);
     };
     Ship.prototype.turnRight = function() {
-      return this.angle += Math.PI / 12;
+      this.angle += Math.PI / 12;
+      return blurgh(this);
     };
     Ship.prototype.fire = function() {
       return this.world.addThing(new Bullet({
@@ -629,11 +631,15 @@
     socket.on('update', function(data) {
       var thing;
       thing = world.getThing(data.id);
-      console.log(thing, data);
       thing.x = data.position.x;
       thing.y = data.position.y;
       thing.angle = data.angle;
       return thing.velocity = data.velocity;
+    });
+    socket.on('delete', function(id) {
+      var thing;
+      thing = world.getThing(id);
+      return thing.cull = true;
     });
     document.addEventListener('keydown', (function(event) {
       var charCode;
@@ -655,6 +661,11 @@
         }
       }
     }), false);
+    setInterval((function() {
+      return blurgh((function() {
+        return ship;
+      })());
+    }), 1000);
     document.addEventListener('keyup', (function(event) {
       if (!ship) {
         return;
