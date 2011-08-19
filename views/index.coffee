@@ -8,4 +8,4 @@ html ->
     script src: "/socket.io/socket.io.js"
     script src: "/asteroids.js"
   body ->
-    canvas ->
+    canvas height: 500, width: 500

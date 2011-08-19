@@ -1,5 +1,5 @@
 (function() {
-  var Asteroid, Bullet, Exhaust, Explosion, Line, Ray, Segment, Ship, Thing, World, addAsteroid, animate, distance_between_points, within;
+  var Asteroid, Bullet, Exhaust, Explosion, Line, Ray, Segment, Ship, Thing, World, animate, distance_between_points, socket, within;
   var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
     for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
     function ctor() { this.constructor = child; }
@@ -145,13 +145,14 @@
   })();
   Thing = (function() {
     function Thing(options) {
-      var _ref, _ref2, _ref3;
+      var _ref, _ref2, _ref3, _ref4;
       if (options == null) {
         options = {};
       }
-      this.x = (_ref = options.x) != null ? _ref : 0;
-      this.y = (_ref2 = options.y) != null ? _ref2 : 0;
-      this.velocity = (_ref3 = options.velocity) != null ? _ref3 : {
+      this.id = (_ref = options.id) != null ? _ref : 0;
+      this.x = (_ref2 = options.x) != null ? _ref2 : 0;
+      this.y = (_ref3 = options.y) != null ? _ref3 : 0;
+      this.velocity = (_ref4 = options.velocity) != null ? _ref4 : {
         horizontal: 0,
         vertical: 0
       };
@@ -184,6 +185,16 @@
     World.prototype.addThing = function(thing) {
       this.things.unshift(thing);
       return thing.world = this;
+    };
+    World.prototype.getThing = function(id) {
+      var thing, _i, _len, _ref;
+      _ref = this.things;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        thing = _ref[_i];
+        if (thing.id === id) {
+          return thing;
+        }
+      }
     };
     World.prototype.contains = function(thing) {
       var height, width, _ref, _ref2, _ref3, _ref4, _ref5;
@@ -279,13 +290,18 @@
   Ship = (function() {
     __extends(Ship, Thing);
     function Ship(options) {
-      var _ref, _ref2;
+      var _ref, _ref2, _ref3;
       if (options == null) {
         options = {};
       }
       Ship.__super__.constructor.call(this, options);
-      this.angle = (_ref = options.angle) != null ? _ref : 0;
-      this.maxSpeed = (_ref2 = options.maxSpeed) != null ? _ref2 : 7;
+      this.color = (_ref = options.color) != null ? _ref : {
+        r: 0,
+        g: 255,
+        b: 0
+      };
+      this.angle = (_ref2 = options.angle) != null ? _ref2 : 0;
+      this.maxSpeed = (_ref3 = options.maxSpeed) != null ? _ref3 : 7;
       this.thrusters = null;
       this.wrap = true;
     }
@@ -303,8 +319,8 @@
       ctx.lineTo(-10, -7);
       ctx.lineTo(10, 0);
       ctx.closePath();
-      ctx.strokeStyle = 'rgb(0, 255, 0)';
-      ctx.fillStyle = 'rgba(0, 255, 0, 0.67)';
+      ctx.strokeStyle = "rgb(" + this.color.r + ", " + this.color.g + ", " + this.color.b + ")";
+      ctx.fillStyle = "rgba(" + this.color.r + ", " + this.color.g + ", " + this.color.b + ", 0.67)";
       ctx.lineWidth = 2;
       ctx.lineJoin = 'round';
       ctx.stroke();
@@ -342,8 +358,9 @@
           if ((hypotenuseSquared = Math.pow(this.velocity.horizontal, 2) + Math.pow(this.velocity.vertical, 2)) > Math.pow(this.maxSpeed, 2)) {
             hypotenuse = Math.sqrt(hypotenuseSquared);
             this.velocity.horizontal = this.maxSpeed * this.velocity.horizontal / hypotenuse;
-            return this.velocity.vertical = this.maxSpeed * this.velocity.vertical / hypotenuse;
+            this.velocity.vertical = this.maxSpeed * this.velocity.vertical / hypotenuse;
           }
+          return blurgh(this);
         }, this);
         if (!timeout) {
           return timeout = setTimeout(throttler, 250);
@@ -582,60 +599,47 @@
     };
     return Asteroid;
   })();
-  addAsteroid = (function() {
-    var pending;
-    pending = false;
-    return function(world, ship) {
-      if (!pending) {
-        pending = true;
-        return setTimeout(function() {
-          var asteroid, radius, x, y, _ref;
-          radius = Math.floor(Math.random() * 50) + 100;
-          while (distance_between_points({
-              x: x != null ? x : ship.x,
-              y: y != null ? y : ship.y
-            }, ship.position()) < 50 + radius) {
-            _ref = [Math.floor(Math.random() * world.canvas.width) - world.quadrant.width, Math.floor(Math.random() * world.canvas.height) - world.quadrant.height], x = _ref[0], y = _ref[1];
-          }
-          asteroid = new Asteroid({
-            x: x,
-            y: y,
-            radius: radius,
-            sides: Math.floor(Math.random() * 5) + 5,
-            rateOfRotation: Math.floor(Math.random() * 60) + 80,
-            velocity: {
-              horizontal: Math.random() * 4 - 2,
-              vertical: Math.random() * 4 - 2
-            }
-          });
-          world.addThing(asteroid);
-          return pending = false;
-        }, (Math.floor(Math.random() * 3) + 1) * 1000);
-      }
+  socket = io.connect("http://localhost:3000");
+  this.blurgh = function(ship) {
+    var data;
+    data = {
+      id: ship.id,
+      position: ship.position(),
+      angle: ship.angle,
+      velocity: ship.velocity
     };
-  })();
+    return socket.emit('update', data);
+  };
   document.addEventListener('DOMContentLoaded', (function() {
     var canvas, ship, world;
     canvas = document.getElementsByTagName('canvas')[0];
-    canvas.height = window.innerHeight;
-    canvas.width = window.innerWidth;
     world = new World(canvas);
-    ship = new Ship({
-      x: 0,
-      y: 0,
-      maxSpeed: 3
+    ship = null;
+    socket.on('add', function(things) {
+      var data, id, thing, _results;
+      _results = [];
+      for (id in things) {
+        data = things[id];
+        thing = new Ship(data);
+        world.addThing(thing);
+        _results.push(data.yours ? ship = thing : void 0);
+      }
+      return _results;
     });
-    world.addThing(ship);
-    world.render = (function() {
-      var oldRender;
-      oldRender = world.render;
-      return function() {
-        addAsteroid(world, ship);
-        return oldRender.call(world);
-      };
-    })();
+    socket.on('update', function(data) {
+      var thing;
+      thing = world.getThing(data.id);
+      console.log(thing, data);
+      thing.x = data.position.x;
+      thing.y = data.position.y;
+      thing.angle = data.angle;
+      return thing.velocity = data.velocity;
+    });
     document.addEventListener('keydown', (function(event) {
       var charCode;
+      if (!ship) {
+        return;
+      }
       charCode = String.fromCharCode(event.which);
       if (charCode === 'W' || charCode === 'A' || charCode === 'D' || charCode === ' ') {
         event.preventDefault();
@@ -652,6 +656,9 @@
       }
     }), false);
     document.addEventListener('keyup', (function(event) {
+      if (!ship) {
+        return;
+      }
       switch (String.fromCharCode(event.which)) {
         case 'W':
           return ship.stopThrusters();

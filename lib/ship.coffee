@@ -2,6 +2,8 @@ class Ship extends Thing
   constructor: (options = {}) ->
     super(options)
 
+    @color = options.color ? {r: 0, g: 255, b: 0}
+
     @angle = options.angle ? 0
     @maxSpeed = options.maxSpeed ? 7
 
@@ -23,8 +25,8 @@ class Ship extends Thing
     ctx.lineTo 10, 0
     ctx.closePath()
 
-    ctx.strokeStyle = 'rgb(0, 255, 0)'
-    ctx.fillStyle = 'rgba(0, 255, 0, 0.67)'
+    ctx.strokeStyle = "rgb(#{@color.r}, #{@color.g}, #{@color.b})"
+    ctx.fillStyle = "rgba(#{@color.r}, #{@color.g}, #{@color.b}, 0.67)"
     ctx.lineWidth = 2
     ctx.lineJoin = 'round'
     ctx.stroke()
@@ -53,6 +55,8 @@ class Ship extends Thing
           hypotenuse = Math.sqrt hypotenuseSquared
           @velocity.horizontal = @maxSpeed * @velocity.horizontal / hypotenuse
           @velocity.vertical = @maxSpeed * @velocity.vertical / hypotenuse
+
+        blurgh(@)
 
       timeout = setTimeout throttler, 250 unless timeout
 

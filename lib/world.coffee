@@ -15,6 +15,10 @@ class World
     @things.unshift thing
     thing.world = this
 
+  getThing: (id) ->
+    for thing in @things
+      return thing if thing.id is id
+
   contains: (thing) ->
     [width, height] = [
       @quadrant.width + (thing.radius ? 0)

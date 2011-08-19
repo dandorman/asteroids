@@ -1,5 +1,7 @@
 class Thing
   constructor: (options = {}) ->
+    @id = options.id ? 0
+
     @x = options.x ? 0
     @y = options.y ? 0
 
