@@ -5,3 +5,7 @@ watch 'lib/.*\.coffee' do
   puts compile
   system compile
 end
+
+watch 'server\.coffee' do
+  system "coffee -c server.coffee"
+end
