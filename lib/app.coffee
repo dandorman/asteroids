@@ -25,7 +25,7 @@
         #pending = false
       #, (Math.floor(Math.random() * 3) + 1) * 1000
 
-socket = io.connect "http://localhost:3000"
+socket = io.connect "/"
 
 @blurgh = (ship) ->
   data =

@@ -599,7 +599,7 @@
     };
     return Asteroid;
   })();
-  socket = io.connect("http://localhost:3000");
+  socket = io.connect("/");
   this.blurgh = function(ship) {
     var data;
     data = {
