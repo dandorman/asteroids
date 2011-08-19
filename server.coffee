@@ -21,4 +21,5 @@ app.get '/', (req, res) ->
 
 # start server
 
+io = require('socket.io').listen(app)
 app.listen port
