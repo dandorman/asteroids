@@ -44,39 +44,62 @@ class Ship extends Thing
 
   accelerate: do ->
     timeout = null
+
+    throttler = ->
+      @velocity.horizontal += Math.cos @angle
+      @velocity.vertical += Math.sin @angle
+
+      if (hypotenuseSquared = Math.pow(@velocity.horizontal, 2) + Math.pow(@velocity.vertical, 2)) > Math.pow(@maxSpeed, 2)
+        hypotenuse = Math.sqrt hypotenuseSquared
+        @velocity.horizontal = @maxSpeed * @velocity.horizontal / hypotenuse
+        @velocity.vertical = @maxSpeed * @velocity.vertical / hypotenuse
+
+      publish 'ship:moved', [@]
+
+      timeout = setTimeout((-> timeout = null), 250)
+
     ->
-      throttler = =>
-        timeout = null
-
-        @velocity.horizontal += Math.cos @angle
-        @velocity.vertical += Math.sin @angle
-
-        if (hypotenuseSquared = Math.pow(@velocity.horizontal, 2) + Math.pow(@velocity.vertical, 2)) > Math.pow(@maxSpeed, 2)
-          hypotenuse = Math.sqrt hypotenuseSquared
-          @velocity.horizontal = @maxSpeed * @velocity.horizontal / hypotenuse
-          @velocity.vertical = @maxSpeed * @velocity.vertical / hypotenuse
-
-        publish "ship:moved", [@]
-
-      timeout = setTimeout throttler, 250 unless timeout
+      throttler.call @ unless timeout
 
   turnLeft: ->
     @angle -= Math.PI / 12
-    publish "ship:moved", [@]
+    publish 'ship:moved', [@]
 
   turnRight: ->
     @angle += Math.PI / 12
-    publish "ship:moved", [@]
+    publish 'ship:moved', [@]
 
-  fire: ->
-    @world.addThing new Bullet {x: @x + 10 * Math.cos(@angle), y: @y + 10 * Math.sin(@angle), lifespan: 10000, velocity: {horizontal: 10 * Math.cos(@angle), vertical: 10 * Math.sin(@angle)}}
+  fire: do ->
+    timeout = null
 
-  collides_with: (thing) ->
-    thing.contains? x: @x, y: @y
+    throttler = ->
+      bullet = new Bullet
+        x: @x + 10 * Math.cos(@angle)
+        y: @y + 10 * Math.sin(@angle)
+        lifespan: 10000,
+        velocity:
+          horizontal: 10 * Math.cos(@angle)
+          vertical: 10 * Math.sin(@angle)
+      @world.addThing bullet
+      publish 'ship:fired', [@, bullet]
 
-  collided_with: (thing) ->
+      timeout = setTimeout((-> timeout = null), 1000)
+
+    ->
+      throttler.call @ unless timeout
+
+  explode: ->
     @cull = true
     @world.addThing new Explosion x: @x, y: @y
+
+  collides_with: (thing) ->
+    if thing instanceof Bullet
+      distance_between_points(@position(), thing.position()) < 10
+    else
+      thing.contains? x: @x, y: @y
+
+  collided_with: (thing) ->
+    @explode()
 
   reset: ->
     @x = 0

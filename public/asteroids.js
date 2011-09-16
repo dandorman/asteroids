@@ -261,18 +261,20 @@
         }
         this.ctx.translate(thing.x, thing.y);
         thing.render(this.ctx);
-        _ref4 = this.things;
-        for (_j = 0, _len2 = _ref4.length; _j < _len2; _j++) {
-          other = _ref4[_j];
-          if (other === thing || !(other instanceof Asteroid)) {
-            continue;
-          }
-          if (typeof thing.collides_with === "function" ? thing.collides_with(other) : void 0) {
-            if (typeof thing.collided_with === "function") {
-              thing.collided_with(other);
+        if (thing instanceof Ship) {
+          _ref4 = this.things;
+          for (_j = 0, _len2 = _ref4.length; _j < _len2; _j++) {
+            other = _ref4[_j];
+            if (other === thing) {
+              continue;
             }
-            if (typeof other.collided_with === "function") {
-              other.collided_with(thing);
+            if (typeof thing.collides_with === "function" ? thing.collides_with(other) : void 0) {
+              if (typeof thing.collided_with === "function") {
+                thing.collided_with(other);
+              }
+              if (typeof other.collided_with === "function") {
+                other.collided_with(thing);
+              }
             }
           }
         }
@@ -346,58 +348,81 @@
       return this.thrusters = null;
     };
     Ship.prototype.accelerate = (function() {
-      var timeout;
+      var throttler, timeout;
       timeout = null;
+      throttler = function() {
+        var hypotenuse, hypotenuseSquared;
+        this.velocity.horizontal += Math.cos(this.angle);
+        this.velocity.vertical += Math.sin(this.angle);
+        if ((hypotenuseSquared = Math.pow(this.velocity.horizontal, 2) + Math.pow(this.velocity.vertical, 2)) > Math.pow(this.maxSpeed, 2)) {
+          hypotenuse = Math.sqrt(hypotenuseSquared);
+          this.velocity.horizontal = this.maxSpeed * this.velocity.horizontal / hypotenuse;
+          this.velocity.vertical = this.maxSpeed * this.velocity.vertical / hypotenuse;
+        }
+        publish('ship:moved', [this]);
+        return timeout = setTimeout((function() {
+          return timeout = null;
+        }), 250);
+      };
       return function() {
-        var throttler;
-        throttler = __bind(function() {
-          var hypotenuse, hypotenuseSquared;
-          timeout = null;
-          this.velocity.horizontal += Math.cos(this.angle);
-          this.velocity.vertical += Math.sin(this.angle);
-          if ((hypotenuseSquared = Math.pow(this.velocity.horizontal, 2) + Math.pow(this.velocity.vertical, 2)) > Math.pow(this.maxSpeed, 2)) {
-            hypotenuse = Math.sqrt(hypotenuseSquared);
-            this.velocity.horizontal = this.maxSpeed * this.velocity.horizontal / hypotenuse;
-            this.velocity.vertical = this.maxSpeed * this.velocity.vertical / hypotenuse;
-          }
-          return publish("ship:moved", [this]);
-        }, this);
         if (!timeout) {
-          return timeout = setTimeout(throttler, 250);
+          return throttler.call(this);
         }
       };
     })();
     Ship.prototype.turnLeft = function() {
       this.angle -= Math.PI / 12;
-      return publish("ship:moved", [this]);
+      return publish('ship:moved', [this]);
     };
     Ship.prototype.turnRight = function() {
       this.angle += Math.PI / 12;
-      return publish("ship:moved", [this]);
+      return publish('ship:moved', [this]);
     };
-    Ship.prototype.fire = function() {
-      return this.world.addThing(new Bullet({
-        x: this.x + 10 * Math.cos(this.angle),
-        y: this.y + 10 * Math.sin(this.angle),
-        lifespan: 10000,
-        velocity: {
-          horizontal: 10 * Math.cos(this.angle),
-          vertical: 10 * Math.sin(this.angle)
+    Ship.prototype.fire = (function() {
+      var throttler, timeout;
+      timeout = null;
+      throttler = function() {
+        var bullet;
+        bullet = new Bullet({
+          x: this.x + 10 * Math.cos(this.angle),
+          y: this.y + 10 * Math.sin(this.angle),
+          lifespan: 10000,
+          velocity: {
+            horizontal: 10 * Math.cos(this.angle),
+            vertical: 10 * Math.sin(this.angle)
+          }
+        });
+        this.world.addThing(bullet);
+        publish('ship:fired', [this, bullet]);
+        return timeout = setTimeout((function() {
+          return timeout = null;
+        }), 1000);
+      };
+      return function() {
+        if (!timeout) {
+          return throttler.call(this);
         }
-      }));
-    };
-    Ship.prototype.collides_with = function(thing) {
-      return typeof thing.contains === "function" ? thing.contains({
-        x: this.x,
-        y: this.y
-      }) : void 0;
-    };
-    Ship.prototype.collided_with = function(thing) {
+      };
+    })();
+    Ship.prototype.explode = function() {
       this.cull = true;
       return this.world.addThing(new Explosion({
         x: this.x,
         y: this.y
       }));
+    };
+    Ship.prototype.collides_with = function(thing) {
+      if (thing instanceof Bullet) {
+        return distance_between_points(this.position(), thing.position()) < 10;
+      } else {
+        return typeof thing.contains === "function" ? thing.contains({
+          x: this.x,
+          y: this.y
+        }) : void 0;
+      }
+    };
+    Ship.prototype.collided_with = function(thing) {
+      return this.explode();
     };
     Ship.prototype.reset = function() {
       this.x = 0;
@@ -604,8 +629,11 @@
   ShipObserver = (function() {
     function ShipObserver(socket) {
       this.socket = socket;
-      subscribe("ship:moved", __bind(function(ship) {
+      subscribe('ship:moved', __bind(function(ship) {
         return this.moved(ship);
+      }, this));
+      subscribe('ship:fired', __bind(function(ship, bullet) {
+        return this.fired(ship, bullet);
       }, this));
     }
     ShipObserver.prototype.moved = function(ship) {
@@ -617,6 +645,14 @@
         velocity: ship.velocity
       };
       return this.socket.emit('update', data);
+    };
+    ShipObserver.prototype.fired = function(ship, bullet) {
+      var data;
+      data = {
+        position: bullet.position(),
+        velocity: bullet.velocity
+      };
+      return this.socket.emit('ship:fired', data);
     };
     return ShipObserver;
   })();
@@ -646,10 +682,19 @@
       thing.angle = data.angle;
       return thing.velocity = data.velocity;
     });
+    socket.on('ship:fired', function(data) {
+      console.log(data);
+      return world.addThing(new Bullet({
+        x: data.position.x,
+        y: data.position.y,
+        velocity: data.velocity,
+        lifespan: 10000
+      }));
+    });
     socket.on('delete', function(id) {
       var thing;
       thing = world.getThing(id);
-      return thing.cull = true;
+      return typeof thing.explode === "function" ? thing.explode() : void 0;
     });
     document.addEventListener('keydown', (function(event) {
       var charCode;
@@ -675,7 +720,7 @@
       if (!ship) {
         return;
       }
-      return publish("ship:moved", [ship]);
+      return publish('ship:moved', [ship]);
     }), 1000);
     document.addEventListener('keyup', (function(event) {
       if (!ship) {

@@ -48,9 +48,17 @@ document.addEventListener 'DOMContentLoaded', (->
     thing.angle = data.angle
     thing.velocity = data.velocity
 
+  socket.on 'ship:fired', (data) ->
+    console.log data
+    world.addThing new Bullet
+      x: data.position.x,
+      y: data.position.y,
+      velocity: data.velocity,
+      lifespan: 10000
+
   socket.on 'delete', (id) ->
     thing = world.getThing id
-    thing.cull = true
+    thing.explode?()
 
   document.addEventListener 'keydown', ((event) ->
     return unless ship
@@ -67,7 +75,7 @@ document.addEventListener 'DOMContentLoaded', (->
 
   setInterval (->
     return unless ship
-    publish "ship:moved", [ship]
+    publish 'ship:moved', [ship]
   ), 1000
 
   document.addEventListener 'keyup', ((event) ->

@@ -56,6 +56,9 @@ io.sockets.on 'connection', (socket) ->
     thing.velocity = data.velocity
     socket.broadcast.emit 'update', data
 
+  socket.on 'ship:fired', (data) ->
+    socket.broadcast.emit 'ship:fired', data
+
   socket.on 'disconnect', ->
     socket.get 'ship_id', (err, ship_id) ->
       delete things[ship_id]

@@ -57,11 +57,12 @@ class World
       @ctx.translate thing.x, thing.y
       thing.render @ctx
 
-      for other in @things
-        continue if other is thing or !(other instanceof Asteroid)
-        if thing.collides_with? other
-          thing.collided_with? other
-          other.collided_with? thing
+      if thing instanceof Ship
+        for other in @things
+          continue if other is thing
+          if thing.collides_with? other
+            thing.collided_with? other
+            other.collided_with? thing
 
       @ctx.restore()
 

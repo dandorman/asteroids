@@ -71,6 +71,9 @@
       thing.velocity = data.velocity;
       return socket.broadcast.emit('update', data);
     });
+    socket.on('ship:fired', function(data) {
+      return socket.broadcast.emit('ship:fired', data);
+    });
     return socket.on('disconnect', function() {
       return socket.get('ship_id', function(err, ship_id) {
         delete things[ship_id];
