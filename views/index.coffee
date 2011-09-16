@@ -9,4 +9,4 @@ html ->
     script src: "/minpubsub.js"
     script src: "/asteroids.js"
   body ->
-    canvas height: 500, width: 500
+    canvas height: 750, width: 750

@@ -202,12 +202,12 @@
       return (width > (_ref4 = thing.x) && _ref4 > -width) && (height > (_ref5 = thing.y) && _ref5 > -height);
     };
     World.prototype.drawBackground = function() {
-      var i, _ref, _results, _step;
+      var i, _ref, _results;
       this.ctx.fillStyle = this.bg;
       this.ctx.fillRect(-this.quadrant.width, -this.quadrant.height, this.canvas.width, this.canvas.height);
       this.ctx.strokeStyle = 'rgba(128, 128, 255, 0.5)';
       _results = [];
-      for (i = 0, _ref = Math.max(this.quadrant.height, this.quadrant.width), _step = 100; 0 <= _ref ? i <= _ref : i >= _ref; i += _step) {
+      for (i = 0, _ref = Math.max(this.quadrant.height, this.quadrant.width); i <= _ref; i += 100) {
         this.ctx.line({
           x: i,
           y: -this.quadrant.height
@@ -698,7 +698,7 @@
     });
     document.addEventListener('keydown', (function(event) {
       var charCode;
-      if (!ship) {
+      if (ship.cull) {
         return;
       }
       charCode = String.fromCharCode(event.which);
@@ -717,7 +717,7 @@
       }
     }), false);
     setInterval((function() {
-      if (!ship) {
+      if (ship.cull) {
         return;
       }
       return publish('ship:moved', [ship]);

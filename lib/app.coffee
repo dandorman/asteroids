@@ -61,7 +61,7 @@ document.addEventListener 'DOMContentLoaded', (->
     thing.explode?()
 
   document.addEventListener 'keydown', ((event) ->
-    return unless ship
+    return if ship.cull
 
     charCode = String.fromCharCode event.which
     if charCode in ['W', 'A', 'D', ' ']
@@ -74,7 +74,7 @@ document.addEventListener 'DOMContentLoaded', (->
   ), false
 
   setInterval (->
-    return unless ship
+    return if ship.cull
     publish 'ship:moved', [ship]
   ), 1000
 
