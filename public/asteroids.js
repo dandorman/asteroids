@@ -1,5 +1,5 @@
 (function() {
-  var Asteroid, Bullet, Exhaust, Explosion, Line, Ray, Segment, Ship, Thing, World, animate, distance_between_points, socket, within;
+  var Asteroid, Bullet, Exhaust, Explosion, Line, Ray, Segment, Ship, ShipObserver, Thing, World, animate, distance_between_points, socket, within;
   var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
     for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
     function ctor() { this.constructor = child; }
@@ -360,7 +360,7 @@
             this.velocity.horizontal = this.maxSpeed * this.velocity.horizontal / hypotenuse;
             this.velocity.vertical = this.maxSpeed * this.velocity.vertical / hypotenuse;
           }
-          return blurgh(this);
+          return publish("ship:moved", [this]);
         }, this);
         if (!timeout) {
           return timeout = setTimeout(throttler, 250);
@@ -369,11 +369,11 @@
     })();
     Ship.prototype.turnLeft = function() {
       this.angle -= Math.PI / 12;
-      return blurgh(this);
+      return publish("ship:moved", [this]);
     };
     Ship.prototype.turnRight = function() {
       this.angle += Math.PI / 12;
-      return blurgh(this);
+      return publish("ship:moved", [this]);
     };
     Ship.prototype.fire = function() {
       return this.world.addThing(new Bullet({
@@ -601,22 +601,32 @@
     };
     return Asteroid;
   })();
-  socket = io.connect("/");
-  this.blurgh = function(ship) {
-    var data;
-    data = {
-      id: ship.id,
-      position: ship.position(),
-      angle: ship.angle,
-      velocity: ship.velocity
+  ShipObserver = (function() {
+    function ShipObserver(socket) {
+      this.socket = socket;
+      subscribe("ship:moved", __bind(function(ship) {
+        return this.moved(ship);
+      }, this));
+    }
+    ShipObserver.prototype.moved = function(ship) {
+      var data;
+      data = {
+        id: ship.id,
+        position: ship.position(),
+        angle: ship.angle,
+        velocity: ship.velocity
+      };
+      return this.socket.emit('update', data);
     };
-    return socket.emit('update', data);
-  };
+    return ShipObserver;
+  })();
+  socket = io.connect("/");
   document.addEventListener('DOMContentLoaded', (function() {
-    var canvas, ship, world;
+    var canvas, ship, shipObserver, world;
     canvas = document.getElementsByTagName('canvas')[0];
     world = new World(canvas);
     ship = null;
+    shipObserver = new ShipObserver(socket);
     socket.on('add', function(things) {
       var data, id, thing, _results;
       _results = [];
@@ -662,9 +672,10 @@
       }
     }), false);
     setInterval((function() {
-      return blurgh((function() {
-        return ship;
-      })());
+      if (!ship) {
+        return;
+      }
+      return publish("ship:moved", [ship]);
     }), 1000);
     document.addEventListener('keyup', (function(event) {
       if (!ship) {

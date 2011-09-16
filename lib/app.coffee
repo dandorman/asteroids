@@ -27,19 +27,13 @@
 
 socket = io.connect "/"
 
-@blurgh = (ship) ->
-  data =
-    id: ship.id
-    position: ship.position()
-    angle: ship.angle
-    velocity: ship.velocity
-  socket.emit('update', data)
-
 document.addEventListener 'DOMContentLoaded', (->
   canvas = document.getElementsByTagName('canvas')[0]
 
   world = new World canvas
   ship = null
+
+  shipObserver = new ShipObserver(socket)
 
   socket.on 'add', (things) ->
     for id, data of things
@@ -71,7 +65,10 @@ document.addEventListener 'DOMContentLoaded', (->
         when ' ' then ship.fire()
   ), false
 
-  setInterval (-> blurgh do -> ship), 1000
+  setInterval (->
+    return unless ship
+    publish "ship:moved", [ship]
+  ), 1000
 
   document.addEventListener 'keyup', ((event) ->
     return unless ship

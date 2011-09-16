@@ -56,17 +56,17 @@ class Ship extends Thing
           @velocity.horizontal = @maxSpeed * @velocity.horizontal / hypotenuse
           @velocity.vertical = @maxSpeed * @velocity.vertical / hypotenuse
 
-        blurgh @
+        publish "ship:moved", [@]
 
       timeout = setTimeout throttler, 250 unless timeout
 
   turnLeft: ->
     @angle -= Math.PI / 12
-    blurgh @
+    publish "ship:moved", [@]
 
   turnRight: ->
     @angle += Math.PI / 12
-    blurgh @
+    publish "ship:moved", [@]
 
   fire: ->
     @world.addThing new Bullet {x: @x + 10 * Math.cos(@angle), y: @y + 10 * Math.sin(@angle), lifespan: 10000, velocity: {horizontal: 10 * Math.cos(@angle), vertical: 10 * Math.sin(@angle)}}
