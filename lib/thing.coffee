@@ -5,6 +5,8 @@ class Thing
     @x = options.x ? 0
     @y = options.y ? 0
 
+    @radius = options.radius ? 0
+
     @velocity = options.velocity ? {horizontal: 0, vertical: 0}
 
     @createdAt = new Date().getTime()
@@ -16,3 +18,6 @@ class Thing
   position: ->
     x: @x
     y: @y
+
+  reap: ->
+    @cull = true

@@ -161,12 +161,13 @@
   Thing = (function() {
 
     function Thing(options) {
-      var _ref, _ref2, _ref3, _ref4;
+      var _ref, _ref2, _ref3, _ref4, _ref5;
       if (options == null) options = {};
       this.id = (_ref = options.id) != null ? _ref : 0;
       this.x = (_ref2 = options.x) != null ? _ref2 : 0;
       this.y = (_ref3 = options.y) != null ? _ref3 : 0;
-      this.velocity = (_ref4 = options.velocity) != null ? _ref4 : {
+      this.radius = (_ref4 = options.radius) != null ? _ref4 : 0;
+      this.velocity = (_ref5 = options.velocity) != null ? _ref5 : {
         horizontal: 0,
         vertical: 0
       };
@@ -185,6 +186,10 @@
       };
     };
 
+    Thing.prototype.reap = function() {
+      return this.cull = true;
+    };
+
     return Thing;
 
   })();
@@ -196,11 +201,6 @@
       this.ctx = this.canvas.getContext('2d');
       this.things = [];
       this.bg = 'black';
-      this.quadrant = {
-        width: this.canvas.width / 2,
-        height: this.canvas.height / 2
-      };
-      this.ctx.translate(this.quadrant.width, this.quadrant.height);
     }
 
     World.prototype.addThing = function(thing) {
@@ -218,56 +218,37 @@
     };
 
     World.prototype.contains = function(thing) {
-      var height, width, _ref, _ref2, _ref3, _ref4, _ref5;
-      _ref3 = [this.quadrant.width + ((_ref = thing.radius) != null ? _ref : 0), this.quadrant.height + ((_ref2 = thing.radius) != null ? _ref2 : 0)], width = _ref3[0], height = _ref3[1];
-      return (width > (_ref4 = thing.x) && _ref4 > -width) && (height > (_ref5 = thing.y) && _ref5 > -height);
+      var _ref, _ref2;
+      return (-thing.radius < (_ref = thing.x) && _ref < this.canvas.width + thing.radius) && (-thing.radius < (_ref2 = thing.y) && _ref2 < this.canvas.height + thing.radius);
     };
 
     World.prototype.drawBackground = function() {
       var i, _ref, _results;
       this.ctx.fillStyle = this.bg;
-      this.ctx.fillRect(-this.quadrant.width, -this.quadrant.height, this.canvas.width, this.canvas.height);
+      this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
       this.ctx.strokeStyle = 'rgba(128, 128, 255, 0.5)';
       _results = [];
-      for (i = 0, _ref = Math.max(this.quadrant.height, this.quadrant.width); i <= _ref; i += 100) {
+      for (i = 0, _ref = Math.max(this.canvas.height, this.canvas.width); i <= _ref; i += 100) {
         this.ctx.line({
           x: i,
-          y: -this.quadrant.height
+          y: 0
         }, {
           x: i,
-          y: this.quadrant.height
+          y: this.canvas.height
         });
-        this.ctx.line({
-          x: -this.quadrant.width,
+        _results.push(this.ctx.line({
+          x: 0,
           y: i
         }, {
-          x: this.quadrant.width,
+          x: this.canvas.width,
           y: i
-        });
-        if (i) {
-          this.ctx.line({
-            x: -i,
-            y: -this.quadrant.height
-          }, {
-            x: -i,
-            y: this.quadrant.height
-          });
-          _results.push(this.ctx.line({
-            x: -this.quadrant.width,
-            y: -i
-          }, {
-            x: this.quadrant.width,
-            y: -i
-          }));
-        } else {
-          _results.push(void 0);
-        }
+        }));
       }
       return _results;
     };
 
     World.prototype.render = function() {
-      var other, thing, _i, _j, _len, _len2, _ref, _ref2, _ref3, _ref4,
+      var other, thing, _i, _j, _len, _len2, _ref, _ref2,
         _this = this;
       this.now = new Date().getTime();
       this.drawBackground();
@@ -277,21 +258,25 @@
         this.ctx.save();
         thing.update();
         if (thing.wrap) {
-          if (!((this.quadrant.width > (_ref2 = thing.x) && _ref2 > -this.quadrant.width))) {
-            thing.x = this.quadrant.width * -thing.x.sign();
+          if (thing.x > this.canvas.width) {
+            thing.x = 0;
+          } else if (thing.x < 0) {
+            thing.x = this.canvas.width;
           }
-          if (!((this.quadrant.height > (_ref3 = thing.y) && _ref3 > -this.quadrant.height))) {
-            thing.y = this.quadrant.height * -thing.y.sign();
+          if (thing.y > this.canvas.height) {
+            thing.y = 0;
+          } else if (thing.y < 0) {
+            thing.y = this.canvas.height;
           }
         } else {
-          if (!this.contains(thing)) thing.cull = true;
+          if (!this.contains(thing)) thing.reap();
         }
         this.ctx.translate(thing.x, thing.y);
         thing.render(this.ctx);
         if (thing instanceof Ship) {
-          _ref4 = this.things;
-          for (_j = 0, _len2 = _ref4.length; _j < _len2; _j++) {
-            other = _ref4[_j];
+          _ref2 = this.things;
+          for (_j = 0, _len2 = _ref2.length; _j < _len2; _j++) {
+            other = _ref2[_j];
             if (other === thing) continue;
             if (typeof thing.collides_with === "function" ? thing.collides_with(other) : void 0) {
               if (typeof thing.collided_with === "function") {
@@ -422,7 +407,6 @@
           }
         });
         this.world.addThing(bullet);
-        publish('ship:fired', [this, bullet]);
         return timeout = setTimeout((function() {
           return timeout = null;
         }), 1000);
@@ -747,7 +731,6 @@
       return thing.velocity = data.velocity;
     });
     socket.on('ship:fired', function(data) {
-      console.log(data);
       return world.addThing(new Bullet({
         x: data.position.x,
         y: data.position.y,

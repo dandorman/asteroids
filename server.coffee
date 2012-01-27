@@ -35,8 +35,10 @@ ship_colors = cycle [{r: 0, g: 255, b: 0}, {r: 255, g: 0, b: 0}, {r: 0, g: 0, b:
 things = {}
 next_thing_id = 0
 
+[field_width, field_height] = [750, 750]
+
 io.sockets.on 'connection', (socket) ->
-  new_thing = id: ++next_thing_id, x: 0, y: 0, color: ship_colors.next(), maxSpeed: 3
+  new_thing = id: ++next_thing_id, x: Math.floor(field_width / 2), y: Math.floor(field_height / 2), color: ship_colors.next(), maxSpeed: 3
   things[next_thing_id] = new_thing
 
   tmp = {}

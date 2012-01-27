@@ -49,7 +49,6 @@ document.addEventListener 'DOMContentLoaded', (->
     thing.velocity = data.velocity
 
   socket.on 'ship:fired', (data) ->
-    console.log data
     world.addThing new Bullet
       x: data.position.x,
       y: data.position.y,

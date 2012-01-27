@@ -81,7 +81,7 @@ class Ship extends Thing
           horizontal: 10 * Math.cos(@angle)
           vertical: 10 * Math.sin(@angle)
       @world.addThing bullet
-      publish 'ship:fired', [@, bullet]
+      # publish 'ship:fired', [@, bullet]
 
       timeout = setTimeout((-> timeout = null), 1000)
 

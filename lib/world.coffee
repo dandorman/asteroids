@@ -5,12 +5,6 @@ class World
 
     @bg = 'black'
 
-    @quadrant =
-      width: @canvas.width / 2
-      height: @canvas.height / 2
-
-    @ctx.translate @quadrant.width, @quadrant.height
-
   addThing: (thing) ->
     @things.unshift thing
     thing.world = this
@@ -20,24 +14,17 @@ class World
       return thing if thing.id is id
 
   contains: (thing) ->
-    [width, height] = [
-      @quadrant.width + (thing.radius ? 0)
-      @quadrant.height + (thing.radius ? 0)
-    ]
-    width > thing.x > -width and height > thing.y > -height
+    -thing.radius < thing.x < @canvas.width + thing.radius and
+      -thing.radius < thing.y < @canvas.height + thing.radius
 
   drawBackground: ->
     @ctx.fillStyle = @bg
-    @ctx.fillRect -@quadrant.width, -@quadrant.height, @canvas.width, @canvas.height
+    @ctx.fillRect 0, 0, @canvas.width, @canvas.height
 
     @ctx.strokeStyle = 'rgba(128, 128, 255, 0.5)'
-    for i in [0..Math.max(@quadrant.height, @quadrant.width)] by 100
-      @ctx.line {x: i, y: -@quadrant.height}, {x: i, y: @quadrant.height}
-      @ctx.line {x: -@quadrant.width, y: i}, {x: @quadrant.width, y: i}
-
-      if i
-        @ctx.line {x: -i, y: -@quadrant.height}, {x: -i, y: @quadrant.height}
-        @ctx.line {x: -@quadrant.width, y: -i}, {x: @quadrant.width, y: -i}
+    for i in [0..Math.max(@canvas.height, @canvas.width)] by 100
+      @ctx.line {x: i, y: 0}, {x: i, y: @canvas.height}
+      @ctx.line {x: 0, y: i}, {x: @canvas.width, y: i}
 
   render: ->
     @now = new Date().getTime()
@@ -49,10 +36,17 @@ class World
 
       thing.update()
       if thing.wrap
-        thing.x = @quadrant.width * -thing.x.sign() unless @quadrant.width > thing.x > -@quadrant.width
-        thing.y = @quadrant.height * -thing.y.sign() unless @quadrant.height > thing.y > -@quadrant.height
+        if thing.x > @canvas.width
+          thing.x = 0
+        else if thing.x < 0
+          thing.x = @canvas.width
+
+        if thing.y > @canvas.height
+          thing.y = 0
+        else if thing.y < 0
+          thing.y = @canvas.height
       else
-        thing.cull = true unless @contains thing
+        thing.reap() unless @contains thing
 
       @ctx.translate thing.x, thing.y
       thing.render @ctx
