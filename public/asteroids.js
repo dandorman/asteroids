@@ -347,8 +347,8 @@
         _this = this;
       thrust = function() {
         return _this.world.addThing(new Exhaust({
-          x: _this.x - 10 * Math.cos(_this.angle),
-          y: _this.y - 10 * Math.sin(_this.angle)
+          x: _this.x - 10 * _this.angle.cosine(),
+          y: _this.y - 10 * _this.angle.sine()
         }));
       };
       if (!this.thrusters) thrust();
@@ -365,8 +365,8 @@
       timeout = null;
       throttler = function() {
         var hypotenuse, hypotenuseSquared;
-        this.velocity.horizontal += Math.cos(this.angle);
-        this.velocity.vertical += Math.sin(this.angle);
+        this.velocity.horizontal += this.angle.cosine();
+        this.velocity.vertical += this.angle.sine();
         if ((hypotenuseSquared = Math.pow(this.velocity.horizontal, 2) + Math.pow(this.velocity.vertical, 2)) > Math.pow(this.maxSpeed, 2)) {
           hypotenuse = Math.sqrt(hypotenuseSquared);
           this.velocity.horizontal = this.maxSpeed * this.velocity.horizontal / hypotenuse;
@@ -398,15 +398,16 @@
       throttler = function() {
         var bullet;
         bullet = new Bullet({
-          x: this.x + 10 * Math.cos(this.angle),
-          y: this.y + 10 * Math.sin(this.angle),
+          x: this.x + 10 * this.angle.cosine(),
+          y: this.y + 10 * this.angle.sine(),
           lifespan: 10000,
           velocity: {
-            horizontal: 10 * Math.cos(this.angle),
-            vertical: 10 * Math.sin(this.angle)
+            horizontal: 10 * this.angle.cosine(),
+            vertical: 10 * this.angle.sine()
           }
         });
         this.world.addThing(bullet);
+        publish('ship:fired', [this, bullet]);
         return timeout = setTimeout((function() {
           return timeout = null;
         }), 1000);

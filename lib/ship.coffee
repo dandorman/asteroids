@@ -34,7 +34,7 @@ class Ship extends Thing
 
   fireThrusters: ->
     thrust = =>
-      @world.addThing new Exhaust {x: @x - 10 * Math.cos(@angle), y: @y - 10 * Math.sin(@angle)}
+      @world.addThing new Exhaust {x: @x - 10 * @angle.cosine(), y: @y - 10 * @angle.sine()}
     thrust() unless @thrusters
     @thrusters = setInterval thrust, 100 unless @thrusters
 
@@ -46,8 +46,8 @@ class Ship extends Thing
     timeout = null
 
     throttler = ->
-      @velocity.horizontal += Math.cos @angle
-      @velocity.vertical += Math.sin @angle
+      @velocity.horizontal += @angle.cosine()
+      @velocity.vertical += @angle.sine()
 
       if (hypotenuseSquared = Math.pow(@velocity.horizontal, 2) + Math.pow(@velocity.vertical, 2)) > Math.pow(@maxSpeed, 2)
         hypotenuse = Math.sqrt hypotenuseSquared
@@ -74,14 +74,14 @@ class Ship extends Thing
 
     throttler = ->
       bullet = new Bullet
-        x: @x + 10 * Math.cos(@angle)
-        y: @y + 10 * Math.sin(@angle)
+        x: @x + 10 * @angle.cosine()
+        y: @y + 10 * @angle.sine()
         lifespan: 10000,
         velocity:
-          horizontal: 10 * Math.cos(@angle)
-          vertical: 10 * Math.sin(@angle)
+          horizontal: 10 * @angle.cosine()
+          vertical: 10 * @angle.sine()
       @world.addThing bullet
-      # publish 'ship:fired', [@, bullet]
+      publish 'ship:fired', [@, bullet]
 
       timeout = setTimeout((-> timeout = null), 1000)
 
