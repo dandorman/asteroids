@@ -2,14 +2,12 @@ class Ship extends Thing
   constructor: (options = {}) ->
     super(options)
 
-    @color = options.color ? {r: 0, g: 255, b: 0}
+    @color = options.color ? { r: 0, g: 255, b: 0 }
 
     @angle = options.angle ? 0
     @maxSpeed = options.maxSpeed ? 7
 
     @thrusters = null
-
-    @wrap = true
 
   update: ->
     @accelerate() if @thrusters
@@ -95,6 +93,8 @@ class Ship extends Thing
   collides_with: (thing) ->
     if thing instanceof Bullet
       distance_between_points(@position(), thing.position()) < 10
+    if thing instanceof Wall
+      thing.point_on_wall(@)
     else
       thing.contains? x: @x, y: @y
 

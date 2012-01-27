@@ -1,5 +1,5 @@
 (function() {
-  var app, cycle, express, field_height, field_width, io, next_thing_id, port, ship_colors, things, _ref;
+  var app, cycle, express, io, next_thing_id, port, ship_colors, things, world_height, world_width, _ref;
 
   express = require('express');
 
@@ -61,14 +61,14 @@
 
   next_thing_id = 0;
 
-  _ref = [750, 750], field_width = _ref[0], field_height = _ref[1];
+  _ref = [1500, 1500], world_width = _ref[0], world_height = _ref[1];
 
   io.sockets.on('connection', function(socket) {
     var new_thing, tmp;
     new_thing = {
       id: ++next_thing_id,
-      x: Math.floor(field_width / 2),
-      y: Math.floor(field_height / 2),
+      x: world_width / 2,
+      y: world_height / 2,
       color: ship_colors.next(),
       maxSpeed: 3
     };

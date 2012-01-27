@@ -39,7 +39,13 @@ document.addEventListener 'DOMContentLoaded', (->
     for id, data of things
       thing = new Ship(data)
       world.addThing thing
-      ship = thing if data.yours
+      if data.yours
+        ship = thing
+        ship.update = ((original_update) ->
+          ->
+            original_update.call(@)
+            world.center_viewport_at(@x, @y)
+        )(ship.update)
 
   socket.on 'update', (data) ->
     thing = world.getThing data.id

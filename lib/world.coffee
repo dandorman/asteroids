@@ -3,6 +3,20 @@ class World
     @ctx = @canvas.getContext '2d'
     @things = []
 
+    @width = 1500
+    @height = 1500
+
+    @things.push new Wall(x: 10, y: 10, end: { x: @width - 10, y: 10 }, kill: "top")
+    @things.push new Wall(x: 10, y: @height - 10, end: { x: @width - 10, y: @height - 10 }, kill: "bottom")
+    @things.push new Wall(x: 10, y: 10, end: { x: 10, y: @height - 10 }, kill: "left")
+    @things.push new Wall(x: @width - 10, y: 10, end: { x: @width - 10, y: @height - 10 }, kill: "right")
+
+    @viewport =
+      x: 0
+      y: 0
+      width: @canvas.width
+      height: @canvas.height
+
     @bg = 'black'
 
   addThing: (thing) ->
@@ -14,17 +28,17 @@ class World
       return thing if thing.id is id
 
   contains: (thing) ->
-    -thing.radius < thing.x < @canvas.width + thing.radius and
-      -thing.radius < thing.y < @canvas.height + thing.radius
+    -thing.radius < thing.x < @width + thing.radius and
+      -thing.radius < thing.y < @height + thing.radius
 
   drawBackground: ->
     @ctx.fillStyle = @bg
     @ctx.fillRect 0, 0, @canvas.width, @canvas.height
 
-    @ctx.strokeStyle = 'rgba(128, 128, 255, 0.5)'
-    for i in [0..Math.max(@canvas.height, @canvas.width)] by 100
-      @ctx.line {x: i, y: 0}, {x: i, y: @canvas.height}
-      @ctx.line {x: 0, y: i}, {x: @canvas.width, y: i}
+    # @ctx.strokeStyle = 'rgba(128, 128, 255, 0.5)'
+    # for i in [0..Math.max(@canvas.height, @canvas.width)] by 100
+    #   @ctx.line {x: i, y: 0}, {x: i, y: @canvas.height}
+    #   @ctx.line {x: 0, y: i}, {x: @canvas.width, y: i}
 
   render: ->
     @now = new Date().getTime()
@@ -35,20 +49,9 @@ class World
       @ctx.save()
 
       thing.update()
-      if thing.wrap
-        if thing.x > @canvas.width
-          thing.x = 0
-        else if thing.x < 0
-          thing.x = @canvas.width
+      thing.reap() unless @contains thing
 
-        if thing.y > @canvas.height
-          thing.y = 0
-        else if thing.y < 0
-          thing.y = @canvas.height
-      else
-        thing.reap() unless @contains thing
-
-      @ctx.translate thing.x, thing.y
+      @ctx.translate thing.x - @viewport.x, thing.y - @viewport.y
       thing.render @ctx
 
       if thing instanceof Ship
@@ -63,3 +66,7 @@ class World
     @things = @things.filter (thing) -> not thing.cull
 
     animate => @render()
+
+  center_viewport_at: (x, y) ->
+    @viewport.x = Math.max(0, Math.min(x - @viewport.width / 2, @width - @viewport.width))
+    @viewport.y = Math.max(0, Math.min(y - @viewport.height / 2, @height - @viewport.height))

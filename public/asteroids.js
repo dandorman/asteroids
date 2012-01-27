@@ -1,5 +1,5 @@
 (function() {
-  var Asteroid, Bullet, Exhaust, Explosion, Line, Ray, Segment, Ship, ShipObserver, Thing, World, animate, distance_between_points, socket, within,
+  var Asteroid, Bullet, Exhaust, Explosion, Line, Ray, Segment, Ship, ShipObserver, Thing, Wall, World, animate, distance_between_points, socket, within,
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
@@ -200,6 +200,50 @@
       this.canvas = canvas;
       this.ctx = this.canvas.getContext('2d');
       this.things = [];
+      this.width = 1500;
+      this.height = 1500;
+      this.things.push(new Wall({
+        x: 10,
+        y: 10,
+        end: {
+          x: this.width - 10,
+          y: 10
+        },
+        kill: "top"
+      }));
+      this.things.push(new Wall({
+        x: 10,
+        y: this.height - 10,
+        end: {
+          x: this.width - 10,
+          y: this.height - 10
+        },
+        kill: "bottom"
+      }));
+      this.things.push(new Wall({
+        x: 10,
+        y: 10,
+        end: {
+          x: 10,
+          y: this.height - 10
+        },
+        kill: "left"
+      }));
+      this.things.push(new Wall({
+        x: this.width - 10,
+        y: 10,
+        end: {
+          x: this.width - 10,
+          y: this.height - 10
+        },
+        kill: "right"
+      }));
+      this.viewport = {
+        x: 0,
+        y: 0,
+        width: this.canvas.width,
+        height: this.canvas.height
+      };
       this.bg = 'black';
     }
 
@@ -219,32 +263,12 @@
 
     World.prototype.contains = function(thing) {
       var _ref, _ref2;
-      return (-thing.radius < (_ref = thing.x) && _ref < this.canvas.width + thing.radius) && (-thing.radius < (_ref2 = thing.y) && _ref2 < this.canvas.height + thing.radius);
+      return (-thing.radius < (_ref = thing.x) && _ref < this.width + thing.radius) && (-thing.radius < (_ref2 = thing.y) && _ref2 < this.height + thing.radius);
     };
 
     World.prototype.drawBackground = function() {
-      var i, _ref, _results;
       this.ctx.fillStyle = this.bg;
-      this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-      this.ctx.strokeStyle = 'rgba(128, 128, 255, 0.5)';
-      _results = [];
-      for (i = 0, _ref = Math.max(this.canvas.height, this.canvas.width); i <= _ref; i += 100) {
-        this.ctx.line({
-          x: i,
-          y: 0
-        }, {
-          x: i,
-          y: this.canvas.height
-        });
-        _results.push(this.ctx.line({
-          x: 0,
-          y: i
-        }, {
-          x: this.canvas.width,
-          y: i
-        }));
-      }
-      return _results;
+      return this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     };
 
     World.prototype.render = function() {
@@ -257,21 +281,8 @@
         thing = _ref[_i];
         this.ctx.save();
         thing.update();
-        if (thing.wrap) {
-          if (thing.x > this.canvas.width) {
-            thing.x = 0;
-          } else if (thing.x < 0) {
-            thing.x = this.canvas.width;
-          }
-          if (thing.y > this.canvas.height) {
-            thing.y = 0;
-          } else if (thing.y < 0) {
-            thing.y = this.canvas.height;
-          }
-        } else {
-          if (!this.contains(thing)) thing.reap();
-        }
-        this.ctx.translate(thing.x, thing.y);
+        if (!this.contains(thing)) thing.reap();
+        this.ctx.translate(thing.x - this.viewport.x, thing.y - this.viewport.y);
         thing.render(this.ctx);
         if (thing instanceof Ship) {
           _ref2 = this.things;
@@ -298,9 +309,53 @@
       });
     };
 
+    World.prototype.center_viewport_at = function(x, y) {
+      this.viewport.x = Math.max(0, Math.min(x - this.viewport.width / 2, this.width - this.viewport.width));
+      return this.viewport.y = Math.max(0, Math.min(y - this.viewport.height / 2, this.height - this.viewport.height));
+    };
+
     return World;
 
   })();
+
+  Wall = (function(_super) {
+
+    __extends(Wall, _super);
+
+    function Wall(options) {
+      if (options == null) options = {};
+      Wall.__super__.constructor.call(this, options);
+      this.kill = options.kill;
+      this.segment = new Segment(this, options.end);
+    }
+
+    Wall.prototype.render = function(ctx) {
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(this.segment.b.x - this.x, this.segment.b.y - this.y);
+      ctx.strokeStyle = "blue";
+      ctx.lineWidth = 2;
+      return ctx.stroke();
+    };
+
+    Wall.prototype.point_on_wall = function(point) {
+      switch (this.kill) {
+        case "top":
+          return point.y <= this.y;
+        case "bottom":
+          return point.y >= this.y;
+        case "left":
+          return point.x <= this.x;
+        case "right":
+          return point.x >= this.x;
+        default:
+          return false;
+      }
+    };
+
+    return Wall;
+
+  })(Thing);
 
   Ship = (function(_super) {
 
@@ -318,7 +373,6 @@
       this.angle = (_ref2 = options.angle) != null ? _ref2 : 0;
       this.maxSpeed = (_ref3 = options.maxSpeed) != null ? _ref3 : 7;
       this.thrusters = null;
-      this.wrap = true;
     }
 
     Ship.prototype.update = function() {
@@ -427,7 +481,10 @@
 
     Ship.prototype.collides_with = function(thing) {
       if (thing instanceof Bullet) {
-        return distance_between_points(this.position(), thing.position()) < 10;
+        distance_between_points(this.position(), thing.position()) < 10;
+      }
+      if (thing instanceof Wall) {
+        return thing.point_on_wall(this);
       } else {
         return typeof thing.contains === "function" ? thing.contains({
           x: this.x,
@@ -716,7 +773,13 @@
         thing = new Ship(data);
         world.addThing(thing);
         if (data.yours) {
-          _results.push(ship = thing);
+          ship = thing;
+          _results.push(ship.update = (function(original_update) {
+            return function() {
+              original_update.call(this);
+              return world.center_viewport_at(this.x, this.y);
+            };
+          })(ship.update));
         } else {
           _results.push(void 0);
         }

@@ -7,7 +7,7 @@ class Thing
 
     @radius = options.radius ? 0
 
-    @velocity = options.velocity ? {horizontal: 0, vertical: 0}
+    @velocity = options.velocity ? { horizontal: 0, vertical: 0 }
 
     @createdAt = new Date().getTime()
 
