@@ -1,0 +1,12 @@
+{
+  "name": "asteroids",
+  "author": "Dan Dorman <dan.dorman@gmail.com>",
+  "version": "0.0.1",
+  "dependencies": {
+    "coffee-script": ">= 1.2.0",
+    "coffeekup":     ">= 0.3.1",
+    "express":       ">= 2.5.6",
+    "socket.io":     ">= 0.8.7"
+  }
+}
+
