@@ -1,35 +1,29 @@
 (function() {
-  var Asteroid, Bullet, Exhaust, Explosion, Line, Ray, Segment, Ship, ShipObserver, Thing, World, animate, distance_between_points, socket, within;
-  var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
-    for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
-    function ctor() { this.constructor = child; }
-    ctor.prototype = parent.prototype;
-    child.prototype = new ctor;
-    child.__super__ = parent.prototype;
-    return child;
-  }, __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+  var Asteroid, Bullet, Exhaust, Explosion, Line, Ray, Segment, Ship, ShipObserver, Thing, World, animate, distance_between_points, socket, within,
+    __hasProp = Object.prototype.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+
   animate = (function() {
     var fn, _i, _len, _ref;
     _ref = ["requestAnimationFrame", "webkitRequestAnimationFrame", "mozRequestAnimationFrame"];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       fn = _ref[_i];
-      if (typeof fn === "function") {
-        return fn;
-      }
+      if (typeof fn === "function") return fn;
     }
     return function(callback) {
       return setTimeout(callback, 1000 / 60);
     };
   })();
+
   distance_between_points = function(a, b) {
     return ((a.x - b.x).squared() + (a.y - b.y).squared()).square_root();
   };
+
   within = function(a, b, delta) {
-    if (delta == null) {
-      delta = 0.001;
-    }
+    if (delta == null) delta = 0.001;
     return (a - b).abs() <= delta;
   };
+
   Number.prototype.sign = function() {
     if (this === 0) {
       return 0;
@@ -41,52 +35,53 @@
       }
     }
   };
+
   Number.prototype.abs = function() {
     return Math.abs(this);
   };
+
   Number.prototype.squared = function() {
     return Math.pow(this, 2);
   };
+
   Number.prototype.square_root = function() {
     return Math.sqrt(this);
   };
-  Number.prototype.arctangent = function() {
-    return Math.atan(this);
-  };
+
   Number.prototype.cosine = function() {
     return Math.cos(this);
   };
+
   Number.prototype.sine = function() {
     return Math.sin(this);
   };
+
   CanvasRenderingContext2D.prototype.line = function(from, to, options) {
-    if (options == null) {
-      options = {};
-    }
+    if (options == null) options = {};
     this.beginPath();
     this.moveTo(from.x, from.y);
     this.lineTo(to.x, to.y);
     this.closePath();
     return this.stroke();
   };
+
   CanvasRenderingContext2D.prototype.circle = function(at, radius, options) {
-    if (options == null) {
-      options = {};
-    }
+    if (options == null) options = {};
     this.beginPath();
     this.arc(at.x, at.y, radius, 0, 2 * Math.PI, false);
     return this.fill();
   };
+
   Line = (function() {
+
     function Line(a, b) {
       this.a = a;
       this.b = b;
     }
+
     Line.prototype.intersection = function(line) {
       var cross_product_a, cross_product_b, denominator;
-      if (this.parallel_to(line)) {
-        return;
-      }
+      if (this.parallel_to(line)) return;
       cross_product_a = this.a.x * this.b.y - this.a.y * this.b.x;
       cross_product_b = line.a.x * line.b.y - line.a.y * line.b.x;
       denominator = (this.a.x - this.b.x) * (line.a.y - line.b.y) - (this.a.y - this.b.y) * (line.a.x - line.b.x);
@@ -95,26 +90,36 @@
         y: (cross_product_a * (line.a.y - line.b.y) - (this.a.y - this.b.y) * cross_product_b) / denominator
       };
     };
+
     Line.prototype.slope = function() {
       var _ref;
       return (_ref = this.slope) != null ? _ref : this.slope = (this.b.y - this.a.y) / (this.b.x - this.a.x);
     };
+
     Line.prototype.parallel_to = function(line) {
       return Math.abs(this.slope() - line.slope()) < 0.001;
     };
+
     Line.prototype.horizontal = function() {
       return Math.abs(this.a.y - this.b.y) < 0.001;
     };
+
     Line.prototype.vertical = function() {
       return Math.abs(this.a.x - this.b.x) < 0.001;
     };
+
     return Line;
+
   })();
-  Segment = (function() {
-    __extends(Segment, Line);
+
+  Segment = (function(_super) {
+
+    __extends(Segment, _super);
+
     function Segment() {
       Segment.__super__.constructor.apply(this, arguments);
     }
+
     Segment.prototype.intersection = function(line) {
       var point, _ref, _ref2;
       point = Segment.__super__.intersection.call(this, line);
@@ -124,16 +129,23 @@
         }
       }
     };
+
     Segment.prototype.has_endpoint = function(point) {
       return (point.x - this.a.x).abs() <= 0.001 && (point.y - this.a.y).abs() <= 0.001 || (point.x - this.b.x).abs() <= 0.001 && (point.y - this.b.y).abs() <= 0.001;
     };
+
     return Segment;
-  })();
-  Ray = (function() {
-    __extends(Ray, Line);
+
+  })(Line);
+
+  Ray = (function(_super) {
+
+    __extends(Ray, _super);
+
     function Ray() {
       Ray.__super__.constructor.apply(this, arguments);
     }
+
     Ray.prototype.intersection = function(line) {
       var point;
       point = line instanceof Segment ? line.intersection(this) : Ray.__super__.intersection.call(this, line);
@@ -141,14 +153,16 @@
         return point;
       }
     };
+
     return Ray;
-  })();
+
+  })(Line);
+
   Thing = (function() {
+
     function Thing(options) {
       var _ref, _ref2, _ref3, _ref4;
-      if (options == null) {
-        options = {};
-      }
+      if (options == null) options = {};
       this.id = (_ref = options.id) != null ? _ref : 0;
       this.x = (_ref2 = options.x) != null ? _ref2 : 0;
       this.y = (_ref3 = options.y) != null ? _ref3 : 0;
@@ -158,19 +172,25 @@
       };
       this.createdAt = new Date().getTime();
     }
+
     Thing.prototype.update = function() {
       this.x += this.velocity.horizontal;
       return this.y += this.velocity.vertical;
     };
+
     Thing.prototype.position = function() {
       return {
         x: this.x,
         y: this.y
       };
     };
+
     return Thing;
+
   })();
+
   World = (function() {
+
     function World(canvas) {
       this.canvas = canvas;
       this.ctx = this.canvas.getContext('2d');
@@ -182,25 +202,27 @@
       };
       this.ctx.translate(this.quadrant.width, this.quadrant.height);
     }
+
     World.prototype.addThing = function(thing) {
       this.things.unshift(thing);
       return thing.world = this;
     };
+
     World.prototype.getThing = function(id) {
       var thing, _i, _len, _ref;
       _ref = this.things;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         thing = _ref[_i];
-        if (thing.id === id) {
-          return thing;
-        }
+        if (thing.id === id) return thing;
       }
     };
+
     World.prototype.contains = function(thing) {
       var height, width, _ref, _ref2, _ref3, _ref4, _ref5;
       _ref3 = [this.quadrant.width + ((_ref = thing.radius) != null ? _ref : 0), this.quadrant.height + ((_ref2 = thing.radius) != null ? _ref2 : 0)], width = _ref3[0], height = _ref3[1];
       return (width > (_ref4 = thing.x) && _ref4 > -width) && (height > (_ref5 = thing.y) && _ref5 > -height);
     };
+
     World.prototype.drawBackground = function() {
       var i, _ref, _results;
       this.ctx.fillStyle = this.bg;
@@ -222,24 +244,31 @@
           x: this.quadrant.width,
           y: i
         });
-        _results.push(i ? (this.ctx.line({
-          x: -i,
-          y: -this.quadrant.height
-        }, {
-          x: -i,
-          y: this.quadrant.height
-        }), this.ctx.line({
-          x: -this.quadrant.width,
-          y: -i
-        }, {
-          x: this.quadrant.width,
-          y: -i
-        })) : void 0);
+        if (i) {
+          this.ctx.line({
+            x: -i,
+            y: -this.quadrant.height
+          }, {
+            x: -i,
+            y: this.quadrant.height
+          });
+          _results.push(this.ctx.line({
+            x: -this.quadrant.width,
+            y: -i
+          }, {
+            x: this.quadrant.width,
+            y: -i
+          }));
+        } else {
+          _results.push(void 0);
+        }
       }
       return _results;
     };
+
     World.prototype.render = function() {
-      var other, thing, _i, _j, _len, _len2, _ref, _ref2, _ref3, _ref4;
+      var other, thing, _i, _j, _len, _len2, _ref, _ref2, _ref3, _ref4,
+        _this = this;
       this.now = new Date().getTime();
       this.drawBackground();
       _ref = this.things;
@@ -255,9 +284,7 @@
             thing.y = this.quadrant.height * -thing.y.sign();
           }
         } else {
-          if (!this.contains(thing)) {
-            thing.cull = true;
-          }
+          if (!this.contains(thing)) thing.cull = true;
         }
         this.ctx.translate(thing.x, thing.y);
         thing.render(this.ctx);
@@ -265,9 +292,7 @@
           _ref4 = this.things;
           for (_j = 0, _len2 = _ref4.length; _j < _len2; _j++) {
             other = _ref4[_j];
-            if (other === thing) {
-              continue;
-            }
+            if (other === thing) continue;
             if (typeof thing.collides_with === "function" ? thing.collides_with(other) : void 0) {
               if (typeof thing.collided_with === "function") {
                 thing.collided_with(other);
@@ -283,19 +308,22 @@
       this.things = this.things.filter(function(thing) {
         return !thing.cull;
       });
-      return animate(__bind(function() {
-        return this.render();
-      }, this));
+      return animate(function() {
+        return _this.render();
+      });
     };
+
     return World;
+
   })();
-  Ship = (function() {
-    __extends(Ship, Thing);
+
+  Ship = (function(_super) {
+
+    __extends(Ship, _super);
+
     function Ship(options) {
       var _ref, _ref2, _ref3;
-      if (options == null) {
-        options = {};
-      }
+      if (options == null) options = {};
       Ship.__super__.constructor.call(this, options);
       this.color = (_ref = options.color) != null ? _ref : {
         r: 0,
@@ -307,12 +335,12 @@
       this.thrusters = null;
       this.wrap = true;
     }
+
     Ship.prototype.update = function() {
-      if (this.thrusters) {
-        this.accelerate();
-      }
+      if (this.thrusters) this.accelerate();
       return Ship.__super__.update.call(this);
     };
+
     Ship.prototype.render = function(ctx) {
       ctx.rotate(this.angle);
       ctx.beginPath();
@@ -328,25 +356,25 @@
       ctx.stroke();
       return ctx.fill();
     };
+
     Ship.prototype.fireThrusters = function() {
-      var thrust;
-      thrust = __bind(function() {
-        return this.world.addThing(new Exhaust({
-          x: this.x - 10 * Math.cos(this.angle),
-          y: this.y - 10 * Math.sin(this.angle)
+      var thrust,
+        _this = this;
+      thrust = function() {
+        return _this.world.addThing(new Exhaust({
+          x: _this.x - 10 * Math.cos(_this.angle),
+          y: _this.y - 10 * Math.sin(_this.angle)
         }));
-      }, this);
-      if (!this.thrusters) {
-        thrust();
-      }
-      if (!this.thrusters) {
-        return this.thrusters = setInterval(thrust, 100);
-      }
+      };
+      if (!this.thrusters) thrust();
+      if (!this.thrusters) return this.thrusters = setInterval(thrust, 100);
     };
+
     Ship.prototype.stopThrusters = function() {
       clearInterval(this.thrusters);
       return this.thrusters = null;
     };
+
     Ship.prototype.accelerate = (function() {
       var throttler, timeout;
       timeout = null;
@@ -365,19 +393,20 @@
         }), 250);
       };
       return function() {
-        if (!timeout) {
-          return throttler.call(this);
-        }
+        if (!timeout) return throttler.call(this);
       };
     })();
+
     Ship.prototype.turnLeft = function() {
       this.angle -= Math.PI / 12;
       return publish('ship:moved', [this]);
     };
+
     Ship.prototype.turnRight = function() {
       this.angle += Math.PI / 12;
       return publish('ship:moved', [this]);
     };
+
     Ship.prototype.fire = (function() {
       var throttler, timeout;
       timeout = null;
@@ -399,11 +428,10 @@
         }), 1000);
       };
       return function() {
-        if (!timeout) {
-          return throttler.call(this);
-        }
+        if (!timeout) return throttler.call(this);
       };
     })();
+
     Ship.prototype.explode = function() {
       this.cull = true;
       return this.world.addThing(new Explosion({
@@ -411,6 +439,7 @@
         y: this.y
       }));
     };
+
     Ship.prototype.collides_with = function(thing) {
       if (thing instanceof Bullet) {
         return distance_between_points(this.position(), thing.position()) < 10;
@@ -421,9 +450,11 @@
         }) : void 0;
       }
     };
+
     Ship.prototype.collided_with = function(thing) {
       return this.explode();
     };
+
     Ship.prototype.reset = function() {
       this.x = 0;
       this.y = 0;
@@ -433,27 +464,30 @@
         vertical: 0
       };
     };
+
     return Ship;
-  })();
-  Exhaust = (function() {
-    __extends(Exhaust, Thing);
+
+  })(Thing);
+
+  Exhaust = (function(_super) {
+
+    __extends(Exhaust, _super);
+
     function Exhaust(options) {
       var _ref;
-      if (options == null) {
-        options = {};
-      }
+      if (options == null) options = {};
       Exhaust.__super__.constructor.call(this, options);
       this.lifespan = (_ref = options.lifespan) != null ? _ref : 1000;
     }
+
     Exhaust.prototype.update = function() {
       var percentCompleted;
       percentCompleted = (this.world.now - this.createdAt) / this.lifespan;
       this.alpha = 1 - percentCompleted;
       this.radius = 1 + 6 * percentCompleted;
-      if (this.alpha < 0.01) {
-        return this.cull = true;
-      }
+      if (this.alpha < 0.01) return this.cull = true;
     };
+
     Exhaust.prototype.render = function(ctx) {
       ctx.fillStyle = "rgba(255, 100, 200, " + this.alpha + ")";
       return ctx.circle({
@@ -461,13 +495,19 @@
         y: 0
       }, this.radius);
     };
+
     return Exhaust;
-  })();
-  Bullet = (function() {
-    __extends(Bullet, Thing);
+
+  })(Thing);
+
+  Bullet = (function(_super) {
+
+    __extends(Bullet, _super);
+
     function Bullet() {
       Bullet.__super__.constructor.apply(this, arguments);
     }
+
     Bullet.prototype.render = function(ctx) {
       ctx.fillStyle = "white";
       return ctx.circle({
@@ -475,12 +515,14 @@
         y: 0
       }, 2);
     };
+
     Bullet.prototype.collides_with = function(thing) {
       return typeof thing.contains === "function" ? thing.contains({
         x: this.x,
         y: this.y
       }) : void 0;
     };
+
     Bullet.prototype.collided_with = function(thing) {
       if (thing instanceof Asteroid && !this.cull) {
         this.world.addThing(new Explosion({
@@ -497,15 +539,18 @@
       }
       return this.cull = true;
     };
+
     return Bullet;
-  })();
-  Explosion = (function() {
-    __extends(Explosion, Thing);
+
+  })(Thing);
+
+  Explosion = (function(_super) {
+
+    __extends(Explosion, _super);
+
     function Explosion(options) {
       var _ref, _ref2, _ref3;
-      if (options == null) {
-        options = {};
-      }
+      if (options == null) options = {};
       Explosion.__super__.constructor.call(this, options);
       this.maxRadius = (_ref = options.radius) != null ? _ref : 100;
       this.duration = (_ref2 = options.duration) != null ? _ref2 : 500;
@@ -515,16 +560,16 @@
         b: 0
       };
     }
+
     Explosion.prototype.update = function() {
       var elapsed;
       Explosion.__super__.update.call(this);
       elapsed = +(new Date()) - this.createdAt;
       this.radius = this.maxRadius * elapsed / this.duration;
       this.opacity = 1.0 - elapsed / this.duration;
-      if (elapsed > this.duration) {
-        return this.cull = true;
-      }
+      if (elapsed > this.duration) return this.cull = true;
     };
+
     Explosion.prototype.render = function(ctx) {
       ctx.fillStyle = "rgba(" + this.color.r + ", " + this.color.g + ", " + this.color.b + ", " + this.opacity + ")";
       return ctx.circle({
@@ -532,15 +577,18 @@
         y: 0
       }, this.radius);
     };
+
     return Explosion;
-  })();
-  Asteroid = (function() {
-    __extends(Asteroid, Thing);
+
+  })(Thing);
+
+  Asteroid = (function(_super) {
+
+    __extends(Asteroid, _super);
+
     function Asteroid(options) {
       var _ref, _ref2, _ref3;
-      if (options == null) {
-        options = {};
-      }
+      if (options == null) options = {};
       Asteroid.__super__.constructor.call(this, options);
       this.radius = (_ref = options.radius) != null ? _ref : 50;
       this.sides = (_ref2 = options.sides) != null ? _ref2 : 5;
@@ -549,10 +597,12 @@
       this.strokeStyle = "rgb(200, 200, 200)";
       this.fillStyle = "rgba(200, 200, 200, 0.67)";
     }
+
     Asteroid.prototype.update = function() {
       Asteroid.__super__.update.call(this);
       return this.angle += Math.PI / this.rateOfRotation;
     };
+
     Asteroid.prototype.render = function(ctx) {
       var angle, side, x, y, _ref, _ref2, _ref3;
       angle = this.angle;
@@ -580,6 +630,7 @@
       ctx.stroke();
       return ctx.fill();
     };
+
     Asteroid.prototype.contains = function(point) {
       var current_position, intersection, intersections, ray, segment, unique, _i, _j, _len, _len2, _ref;
       current_position = this.position();
@@ -601,13 +652,12 @@
               break;
             }
           }
-          if (unique) {
-            intersections.push(point);
-          }
+          if (unique) intersections.push(point);
         }
       }
       return intersections.length > 0 && intersections.length % 2;
     };
+
     Asteroid.prototype.segments = function() {
       var index, _ref, _results;
       _results = [];
@@ -616,26 +666,31 @@
       }
       return _results;
     };
+
     Asteroid.prototype.collided_with = function(thing) {
       if (thing instanceof Bullet) {
         this.radius -= 10;
-        if (this.radius <= 50) {
-          return this.cull = true;
-        }
+        if (this.radius <= 50) return this.cull = true;
       }
     };
+
     return Asteroid;
-  })();
+
+  })(Thing);
+
   ShipObserver = (function() {
+
     function ShipObserver(socket) {
+      var _this = this;
       this.socket = socket;
-      subscribe('ship:moved', __bind(function(ship) {
-        return this.moved(ship);
-      }, this));
-      subscribe('ship:fired', __bind(function(ship, bullet) {
-        return this.fired(ship, bullet);
-      }, this));
+      subscribe('ship:moved', function(ship) {
+        return _this.moved(ship);
+      });
+      subscribe('ship:fired', function(ship, bullet) {
+        return _this.fired(ship, bullet);
+      });
     }
+
     ShipObserver.prototype.moved = function(ship) {
       var data;
       data = {
@@ -646,6 +701,7 @@
       };
       return this.socket.emit('update', data);
     };
+
     ShipObserver.prototype.fired = function(ship, bullet) {
       var data;
       data = {
@@ -654,9 +710,13 @@
       };
       return this.socket.emit('ship:fired', data);
     };
+
     return ShipObserver;
+
   })();
+
   socket = io.connect("/");
+
   document.addEventListener('DOMContentLoaded', (function() {
     var canvas, ship, shipObserver, world;
     canvas = document.getElementsByTagName('canvas')[0];
@@ -670,7 +730,11 @@
         data = things[id];
         thing = new Ship(data);
         world.addThing(thing);
-        _results.push(data.yours ? ship = thing : void 0);
+        if (data.yours) {
+          _results.push(ship = thing);
+        } else {
+          _results.push(void 0);
+        }
       }
       return _results;
     });
@@ -698,9 +762,7 @@
     });
     document.addEventListener('keydown', (function(event) {
       var charCode;
-      if (ship.cull) {
-        return;
-      }
+      if (ship.cull) return;
       charCode = String.fromCharCode(event.which);
       if (charCode === 'W' || charCode === 'A' || charCode === 'D' || charCode === ' ') {
         event.preventDefault();
@@ -717,15 +779,11 @@
       }
     }), false);
     setInterval((function() {
-      if (ship.cull) {
-        return;
-      }
+      if (ship.cull) return;
       return publish('ship:moved', [ship]);
     }), 1000);
     document.addEventListener('keyup', (function(event) {
-      if (!ship) {
-        return;
-      }
+      if (!ship) return;
       switch (String.fromCharCode(event.which)) {
         case 'W':
           return ship.stopThrusters();
@@ -735,4 +793,5 @@
       return world.render();
     });
   }), false);
+
 }).call(this);

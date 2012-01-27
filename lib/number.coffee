@@ -9,6 +9,5 @@ Number::abs = -> Math.abs(@)
 Number::squared = -> Math.pow(this, 2)
 Number::square_root = -> Math.sqrt(this)
 
-Number::arctangent = -> Math.atan(this)
 Number::cosine = -> Math.cos(this)
 Number::sine = -> Math.sin(this)

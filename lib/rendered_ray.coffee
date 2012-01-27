@@ -5,7 +5,7 @@ class RenderedRay extends Thing
     super(options)
 
   render: (ctx) ->
-    angle = ((@b.y - @a.y) / (@b.x - @a.x)).arctangent()
+    angle = Math.atan2 @b.y - @a.y, @b.x - @a.x
     angle -= Math.PI if (@b.x - @a.x < 0)
     hypotenuse = ((@b.y - @a.y).squared() + (@b.x - @a.x).squared()).square_root()
 
