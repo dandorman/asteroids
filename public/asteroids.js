@@ -364,6 +364,7 @@
     function Ship(options) {
       var _ref, _ref2, _ref3;
       if (options == null) options = {};
+      if (options.radius == null) options.radius = 10;
       Ship.__super__.constructor.call(this, options);
       this.color = (_ref = options.color) != null ? _ref : {
         r: 0,
@@ -464,7 +465,7 @@
         publish('ship:fired', [this, bullet]);
         return timeout = setTimeout((function() {
           return timeout = null;
-        }), 1000);
+        }), 500);
       };
       return function() {
         if (!timeout) return throttler.call(this);
@@ -481,9 +482,8 @@
 
     Ship.prototype.collides_with = function(thing) {
       if (thing instanceof Bullet) {
-        distance_between_points(this.position(), thing.position()) < 10;
-      }
-      if (thing instanceof Wall) {
+        return distance_between_points(this, thing) <= this.radius;
+      } else if (thing instanceof Wall) {
         return thing.point_on_wall(this);
       } else {
         return typeof thing.contains === "function" ? thing.contains({

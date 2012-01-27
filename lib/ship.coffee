@@ -1,5 +1,7 @@
 class Ship extends Thing
   constructor: (options = {}) ->
+    options.radius ?= 10
+
     super(options)
 
     @color = options.color ? { r: 0, g: 255, b: 0 }
@@ -81,7 +83,7 @@ class Ship extends Thing
       @world.addThing bullet
       publish 'ship:fired', [@, bullet]
 
-      timeout = setTimeout((-> timeout = null), 1000)
+      timeout = setTimeout((-> timeout = null), 500)
 
     ->
       throttler.call @ unless timeout
@@ -92,8 +94,8 @@ class Ship extends Thing
 
   collides_with: (thing) ->
     if thing instanceof Bullet
-      distance_between_points(@position(), thing.position()) < 10
-    if thing instanceof Wall
+      distance_between_points(@, thing) <= @radius
+    else if thing instanceof Wall
       thing.point_on_wall(@)
     else
       thing.contains? x: @x, y: @y
