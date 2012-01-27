@@ -12,7 +12,7 @@ app.configure ->
 
 port = 80
 app.configure 'development', ->
-  port = 3000
+  port = 3141
 
 # routes
 

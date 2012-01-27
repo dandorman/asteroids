@@ -1,24 +1,36 @@
 (function() {
   var app, cycle, express, io, next_thing_id, port, ship_colors, things;
+
   express = require('express');
+
   app = express.createServer();
+
   app.register('.coffee', require('coffeekup'));
+
   app.set('view options', {
     layout: false
   });
+
   app.set('view engine', 'coffee');
+
   app.configure(function() {
     return app.use(express.static("" + __dirname + "/public"));
   });
+
   port = 80;
+
   app.configure('development', function() {
-    return port = 3000;
+    return port = 3141;
   });
+
   app.get('/', function(req, res) {
     return res.render('index.coffee');
   });
+
   io = require('socket.io').listen(app);
+
   app.listen(port);
+
   cycle = function(items) {
     var index, length, _ref;
     _ref = [0, items.length], index = _ref[0], length = _ref[1];
@@ -28,6 +40,7 @@
       }
     };
   };
+
   ship_colors = cycle([
     {
       r: 0,
@@ -43,8 +56,11 @@
       b: 255
     }
   ]);
+
   things = {};
+
   next_thing_id = 0;
+
   io.sockets.on('connection', function(socket) {
     var new_thing, tmp;
     new_thing = {
@@ -81,4 +97,5 @@
       });
     });
   });
+
 }).call(this);
