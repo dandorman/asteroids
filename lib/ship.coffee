@@ -96,7 +96,7 @@ class Ship extends Thing
     if thing instanceof Bullet
       distance_between_points(@, thing) <= @radius
     else if thing instanceof Wall
-      thing.point_on_wall(@)
+      thing.collides_with @
     else
       thing.contains? x: @x, y: @y
 

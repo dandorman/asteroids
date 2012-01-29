@@ -31,8 +31,13 @@ document.addEventListener 'DOMContentLoaded', (->
   canvas = document.getElementsByTagName('canvas')[0]
 
   world = new World canvas
-  ship = null
 
+  world.addThing new Wall(x: 10, y: 10, end: { x: @width - 10, y: 10 }, kill: "top")
+  world.addThing new Wall(x: 10, y: @height - 10, end: { x: @width - 10, y: @height - 10 }, kill: "bottom")
+  world.addThing new Wall(x: 10, y: 10, end: { x: 10, y: @height - 10 }, kill: "left")
+  world.addThing new Wall(x: @width - 10, y: 10, end: { x: @width - 10, y: @height - 10 }, kill: "right")
+
+  ship = null
   shipObserver = new ShipObserver(socket)
 
   socket.on 'add', (things) ->

@@ -242,7 +242,10 @@
         x: 0,
         y: 0,
         width: this.canvas.width,
-        height: this.canvas.height
+        height: this.canvas.height,
+        contains: function(thing) {
+          return (typeof thing.in_viewport === "function" ? thing.in_viewport(this) : void 0) || (thing.x + thing.radius >= this.x && thing.x - thing.radius <= this.x + this.width && thing.y + thing.radius >= this.y && thing.y - thing.radius <= this.y + this.height);
+        }
       };
       this.bg = 'black';
     }
@@ -279,11 +282,13 @@
       _ref = this.things;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         thing = _ref[_i];
-        this.ctx.save();
         thing.update();
         if (!this.contains(thing)) thing.reap();
+        if (!this.viewport.contains(thing)) continue;
+        this.ctx.save();
         this.ctx.translate(thing.x - this.viewport.x, thing.y - this.viewport.y);
         thing.render(this.ctx);
+        this.ctx.restore();
         if (thing instanceof Ship) {
           _ref2 = this.things;
           for (_j = 0, _len2 = _ref2.length; _j < _len2; _j++) {
@@ -299,7 +304,6 @@
             }
           }
         }
-        this.ctx.restore();
       }
       this.things = this.things.filter(function(thing) {
         return !thing.cull;
@@ -338,19 +342,30 @@
       return ctx.stroke();
     };
 
-    Wall.prototype.point_on_wall = function(point) {
+    Wall.prototype.collides_with = function(thing) {
       switch (this.kill) {
         case "top":
-          return point.y <= this.y;
+          return thing.y <= this.y;
         case "bottom":
-          return point.y >= this.y;
+          return thing.y >= this.y;
         case "left":
-          return point.x <= this.x;
+          return thing.x <= this.x;
         case "right":
-          return point.x >= this.x;
+          return thing.x >= this.x;
         default:
           return false;
       }
+    };
+
+    Wall.prototype.in_viewport = function(viewport) {
+      var _ref, _ref2;
+      if (this.segment.vertical() && (viewport.x <= (_ref = this.x) && _ref <= viewport.x + viewport.width)) {
+        return true;
+      }
+      if (this.segment.horizontal() && (viewport.y <= (_ref2 = this.y) && _ref2 <= viewport.y + viewport.height)) {
+        return true;
+      }
+      return false;
     };
 
     return Wall;
@@ -484,7 +499,7 @@
       if (thing instanceof Bullet) {
         return distance_between_points(this, thing) <= this.radius;
       } else if (thing instanceof Wall) {
-        return thing.point_on_wall(this);
+        return thing.collides_with(this);
       } else {
         return typeof thing.contains === "function" ? thing.contains({
           x: this.x,
@@ -763,6 +778,42 @@
     var canvas, ship, shipObserver, world;
     canvas = document.getElementsByTagName('canvas')[0];
     world = new World(canvas);
+    world.addThing(new Wall({
+      x: 10,
+      y: 10,
+      end: {
+        x: this.width - 10,
+        y: 10
+      },
+      kill: "top"
+    }));
+    world.addThing(new Wall({
+      x: 10,
+      y: this.height - 10,
+      end: {
+        x: this.width - 10,
+        y: this.height - 10
+      },
+      kill: "bottom"
+    }));
+    world.addThing(new Wall({
+      x: 10,
+      y: 10,
+      end: {
+        x: 10,
+        y: this.height - 10
+      },
+      kill: "left"
+    }));
+    world.addThing(new Wall({
+      x: this.width - 10,
+      y: 10,
+      end: {
+        x: this.width - 10,
+        y: this.height - 10
+      },
+      kill: "right"
+    }));
     ship = null;
     shipObserver = new ShipObserver(socket);
     socket.on('add', function(things) {

@@ -16,6 +16,12 @@ class World
       y: 0
       width: @canvas.width
       height: @canvas.height
+      contains: (thing) ->
+        thing.in_viewport?(@) or
+        (thing.x + thing.radius >= @x and
+        thing.x - thing.radius <= @x + @width and
+        thing.y + thing.radius >= @y and
+        thing.y - thing.radius <= @y + @height)
 
     @bg = 'black'
 
@@ -46,13 +52,15 @@ class World
     @drawBackground()
 
     for thing in @things
-      @ctx.save()
-
       thing.update()
       thing.reap() unless @contains thing
 
+      continue unless @viewport.contains thing
+
+      @ctx.save()
       @ctx.translate thing.x - @viewport.x, thing.y - @viewport.y
       thing.render @ctx
+      @ctx.restore()
 
       if thing instanceof Ship
         for other in @things
@@ -60,8 +68,6 @@ class World
           if thing.collides_with? other
             thing.collided_with? other
             other.collided_with? thing
-
-      @ctx.restore()
 
     @things = @things.filter (thing) -> not thing.cull
 

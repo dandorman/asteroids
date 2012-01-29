@@ -14,11 +14,15 @@ class Wall extends Thing
     ctx.lineWidth = 2
     ctx.stroke()
 
-  point_on_wall: (point) ->
+  collides_with: (thing) ->
     switch @kill
-      when "top" then point.y <= @y
-      when "bottom" then point.y >= @y
-      when "left" then point.x <= @x
-      when "right" then point.x >= @x
+      when "top" then thing.y <= @y
+      when "bottom" then thing.y >= @y
+      when "left" then thing.x <= @x
+      when "right" then thing.x >= @x
       else false
 
+  in_viewport: (viewport) ->
+    return true if @segment.vertical() and viewport.x <= @x <= viewport.x + viewport.width
+    return true if @segment.horizontal() and viewport.y <= @y <= viewport.y + viewport.height
+    false
