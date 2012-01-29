@@ -6,11 +6,6 @@ class World
     @width = 1500
     @height = 1500
 
-    @things.push new Wall(x: 10, y: 10, end: { x: @width - 10, y: 10 }, kill: "top")
-    @things.push new Wall(x: 10, y: @height - 10, end: { x: @width - 10, y: @height - 10 }, kill: "bottom")
-    @things.push new Wall(x: 10, y: 10, end: { x: 10, y: @height - 10 }, kill: "left")
-    @things.push new Wall(x: @width - 10, y: 10, end: { x: @width - 10, y: @height - 10 }, kill: "right")
-
     @viewport =
       x: 0
       y: 0

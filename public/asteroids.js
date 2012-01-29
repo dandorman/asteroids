@@ -202,42 +202,6 @@
       this.things = [];
       this.width = 1500;
       this.height = 1500;
-      this.things.push(new Wall({
-        x: 10,
-        y: 10,
-        end: {
-          x: this.width - 10,
-          y: 10
-        },
-        kill: "top"
-      }));
-      this.things.push(new Wall({
-        x: 10,
-        y: this.height - 10,
-        end: {
-          x: this.width - 10,
-          y: this.height - 10
-        },
-        kill: "bottom"
-      }));
-      this.things.push(new Wall({
-        x: 10,
-        y: 10,
-        end: {
-          x: 10,
-          y: this.height - 10
-        },
-        kill: "left"
-      }));
-      this.things.push(new Wall({
-        x: this.width - 10,
-        y: 10,
-        end: {
-          x: this.width - 10,
-          y: this.height - 10
-        },
-        kill: "right"
-      }));
       this.viewport = {
         x: 0,
         y: 0,
