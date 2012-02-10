@@ -73,16 +73,18 @@ document.addEventListener 'DOMContentLoaded', (->
     thing.explode?()
 
   document.addEventListener 'keydown', ((event) ->
-    return if ship.cull
-
     charCode = String.fromCharCode event.which
-    if charCode in ['W', 'A', 'D', ' ']
-      event.preventDefault()
-      switch String.fromCharCode event.which
-        when 'W' then ship.fireThrusters()
-        when 'A' then ship.turnLeft()
-        when 'D' then ship.turnRight()
-        when ' ' then ship.fire()
+    if ship.cull
+      if charCode is ' '
+        socket.emit 'ship:spawn'
+    else
+      if charCode in ['W', 'A', 'D', ' ']
+        event.preventDefault()
+        switch String.fromCharCode event.which
+          when 'W' then ship.fireThrusters()
+          when 'A' then ship.turnLeft()
+          when 'D' then ship.turnRight()
+          when ' ' then ship.fire()
   ), false
 
   setInterval (->

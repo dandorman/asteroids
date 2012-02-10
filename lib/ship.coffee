@@ -91,6 +91,7 @@ class Ship extends Thing
   explode: ->
     @cull = true
     @world.addThing new Explosion x: @x, y: @y
+    publish 'ship:exploded', [@]
 
   collides_with: (thing) ->
     if thing instanceof Bullet

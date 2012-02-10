@@ -50,6 +50,19 @@ io.sockets.on 'connection', (socket) ->
   socket.set 'ship_id', next_thing_id
   delete new_thing.yours
 
+  socket.on 'ship:spawn', ->
+    new_thing = id: ++next_thing_id, x: world_width / 2, y: world_height / 2, color: ship_colors.next(), maxSpeed: 3
+    things[next_thing_id] = new_thing
+
+    tmp = {}
+    tmp[next_thing_id] = new_thing
+    socket.broadcast.emit 'add', tmp
+
+    new_thing.yours = true
+    socket.emit 'add', things
+    socket.set 'ship_id', next_thing_id
+    delete new_thing.yours
+
   socket.on 'update', (data) ->
     thing = things[data.id]
     thing.x = data.position.x
@@ -60,6 +73,10 @@ io.sockets.on 'connection', (socket) ->
 
   socket.on 'ship:fired', (data) ->
     socket.broadcast.emit 'ship:fired', data
+
+  socket.on 'ship:exploded', (data) ->
+    delete things[data.id]
+    socket.broadcast.emit 'delete', data.id
 
   socket.on 'disconnect', ->
     socket.get 'ship_id', (err, ship_id) ->

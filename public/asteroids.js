@@ -1,5 +1,5 @@
 (function() {
-  var Asteroid, Bullet, Exhaust, Explosion, Line, Ray, Segment, Ship, ShipObserver, Thing, Wall, World, animate, distance_between_points, socket, within,
+  var Asteroid, Bullet, Exhaust, Explosion, Line, Ray, Segment, Ship, ShipObserver, Thing, Wall, World, animate, create_walls, distance_between_points, socket, within,
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
@@ -453,10 +453,11 @@
 
     Ship.prototype.explode = function() {
       this.cull = true;
-      return this.world.addThing(new Explosion({
+      this.world.addThing(new Explosion({
         x: this.x,
         y: this.y
       }));
+      return publish('ship:exploded', [this]);
     };
 
     Ship.prototype.collides_with = function(thing) {
@@ -710,6 +711,9 @@
       subscribe('ship:fired', function(ship, bullet) {
         return _this.fired(ship, bullet);
       });
+      subscribe('ship:exploded', function(ship) {
+        return _this.exploded(ship);
+      });
     }
 
     ShipObserver.prototype.moved = function(ship) {
@@ -732,31 +736,34 @@
       return this.socket.emit('ship:fired', data);
     };
 
+    ShipObserver.prototype.exploded = function(ship) {
+      return this.socket.emit('ship:exploded', {
+        id: ship.id
+      });
+    };
+
     return ShipObserver;
 
   })();
 
   socket = io.connect("/");
 
-  document.addEventListener('DOMContentLoaded', (function() {
-    var canvas, ship, shipObserver, world;
-    canvas = document.getElementsByTagName('canvas')[0];
-    world = new World(canvas);
+  create_walls = function(world) {
     world.addThing(new Wall({
       x: 10,
       y: 10,
       end: {
-        x: this.width - 10,
+        x: world.width - 10,
         y: 10
       },
       kill: "top"
     }));
     world.addThing(new Wall({
       x: 10,
-      y: this.height - 10,
+      y: world.height - 10,
       end: {
-        x: this.width - 10,
-        y: this.height - 10
+        x: world.width - 10,
+        y: world.height - 10
       },
       kill: "bottom"
     }));
@@ -765,19 +772,26 @@
       y: 10,
       end: {
         x: 10,
-        y: this.height - 10
+        y: world.height - 10
       },
       kill: "left"
     }));
-    world.addThing(new Wall({
-      x: this.width - 10,
+    return world.addThing(new Wall({
+      x: world.width - 10,
       y: 10,
       end: {
-        x: this.width - 10,
-        y: this.height - 10
+        x: world.width - 10,
+        y: world.height - 10
       },
       kill: "right"
     }));
+  };
+
+  document.addEventListener('DOMContentLoaded', (function() {
+    var canvas, ship, shipObserver, world;
+    canvas = document.getElementsByTagName('canvas')[0];
+    world = new World(canvas);
+    create_walls(world);
     ship = null;
     shipObserver = new ShipObserver(socket);
     socket.on('add', function(things) {
@@ -824,19 +838,22 @@
     });
     document.addEventListener('keydown', (function(event) {
       var charCode;
-      if (ship.cull) return;
       charCode = String.fromCharCode(event.which);
-      if (charCode === 'W' || charCode === 'A' || charCode === 'D' || charCode === ' ') {
-        event.preventDefault();
-        switch (String.fromCharCode(event.which)) {
-          case 'W':
-            return ship.fireThrusters();
-          case 'A':
-            return ship.turnLeft();
-          case 'D':
-            return ship.turnRight();
-          case ' ':
-            return ship.fire();
+      if (ship.cull) {
+        if (charCode === ' ') return socket.emit('ship:spawn');
+      } else {
+        if (charCode === 'W' || charCode === 'A' || charCode === 'D' || charCode === ' ') {
+          event.preventDefault();
+          switch (String.fromCharCode(event.which)) {
+            case 'W':
+              return ship.fireThrusters();
+            case 'A':
+              return ship.turnLeft();
+            case 'D':
+              return ship.turnRight();
+            case ' ':
+              return ship.fire();
+          }
         }
       }
     }), false);
