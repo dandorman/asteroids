@@ -27,15 +27,17 @@
 
 socket = io.connect "/"
 
+create_walls = (world) ->
+  world.addThing new Wall(x: 10, y: 10, end: { x: world.width - 10, y: 10 }, kill: "top")
+  world.addThing new Wall(x: 10, y: world.height - 10, end: { x: world.width - 10, y: world.height - 10 }, kill: "bottom")
+  world.addThing new Wall(x: 10, y: 10, end: { x: 10, y: world.height - 10 }, kill: "left")
+  world.addThing new Wall(x: world.width - 10, y: 10, end: { x: world.width - 10, y: world.height - 10 }, kill: "right")
+
 document.addEventListener 'DOMContentLoaded', (->
   canvas = document.getElementsByTagName('canvas')[0]
 
   world = new World canvas
-
-  world.addThing new Wall(x: 10, y: 10, end: { x: @width - 10, y: 10 }, kill: "top")
-  world.addThing new Wall(x: 10, y: @height - 10, end: { x: @width - 10, y: @height - 10 }, kill: "bottom")
-  world.addThing new Wall(x: 10, y: 10, end: { x: 10, y: @height - 10 }, kill: "left")
-  world.addThing new Wall(x: @width - 10, y: 10, end: { x: @width - 10, y: @height - 10 }, kill: "right")
+  create_walls(world)
 
   ship = null
   shipObserver = new ShipObserver(socket)
