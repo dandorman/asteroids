@@ -720,9 +720,12 @@
       var data;
       data = {
         id: ship.id,
-        position: ship.position(),
-        angle: ship.angle,
-        velocity: ship.velocity
+        p: ship.position(),
+        a: ship.angle,
+        v: {
+          h: ship.velocity.horizontal,
+          v: ship.velocity.vertical
+        }
       };
       return this.socket.emit('update', data);
     };
@@ -730,8 +733,11 @@
     ShipObserver.prototype.fired = function(ship, bullet) {
       var data;
       data = {
-        position: bullet.position(),
-        velocity: bullet.velocity
+        p: bullet.position(),
+        v: {
+          h: bullet.velocity.horizontal,
+          v: bullet.velocity.vertical
+        }
       };
       return this.socket.emit('ship:fired', data);
     };
@@ -787,61 +793,75 @@
     }));
   };
 
-  document.addEventListener('DOMContentLoaded', (function() {
+  $.domReady(function() {
     var canvas, ship, shipObserver, world;
-    canvas = document.getElementsByTagName('canvas')[0];
+    canvas = $("canvas")[0];
     world = new World(canvas);
     create_walls(world);
     ship = null;
     shipObserver = new ShipObserver(socket);
-    socket.on('add', function(things) {
+    socket.on('game:joined', function(things) {
       var data, id, thing, _results;
       _results = [];
       for (id in things) {
         data = things[id];
         thing = new Ship(data);
-        world.addThing(thing);
-        if (data.yours) {
-          ship = thing;
-          _results.push(ship.update = (function(original_update) {
-            return function() {
-              original_update.call(this);
-              return world.center_viewport_at(this.x, this.y);
-            };
-          })(ship.update));
-        } else {
-          _results.push(void 0);
-        }
+        _results.push(world.addThing(thing));
       }
       return _results;
+    });
+    socket.on('ship:spawned', function(data) {
+      var thing;
+      thing = new Ship(data);
+      world.addThing(thing);
+      if (data.yours) {
+        ship = thing;
+        ship.update = (function(original_update) {
+          return function() {
+            original_update.call(this);
+            return world.center_viewport_at(this.x, this.y);
+          };
+        })(ship.update);
+        return $(".connection-status").hide();
+      }
     });
     socket.on('update', function(data) {
       var thing;
       thing = world.getThing(data.id);
-      thing.x = data.position.x;
-      thing.y = data.position.y;
-      thing.angle = data.angle;
-      return thing.velocity = data.velocity;
+      thing.x = data.p.x;
+      thing.y = data.p.y;
+      thing.angle = data.a;
+      return thing.velocity = {
+        horizontal: data.v.h,
+        vertical: data.v.v
+      };
     });
     socket.on('ship:fired', function(data) {
       return world.addThing(new Bullet({
-        x: data.position.x,
-        y: data.position.y,
-        velocity: data.velocity,
-        lifespan: 10000
+        x: data.p.x,
+        y: data.p.y,
+        velocity: {
+          horizontal: data.v.h,
+          vertical: data.v.v
+        },
+        lifespan: 1000
       }));
     });
     socket.on('delete', function(id) {
       var thing;
       thing = world.getThing(id);
-      return typeof thing.explode === "function" ? thing.explode() : void 0;
+      return thing && (typeof thing.explode === "function" ? thing.explode() : void 0);
+    });
+    socket.on('disconnect', function(id) {
+      world.things = [];
+      create_walls(world);
+      ship = null;
+      return $(".connection-status").show();
     });
     document.addEventListener('keydown', (function(event) {
       var charCode;
       charCode = String.fromCharCode(event.which);
-      if (ship.cull) {
-        if (charCode === ' ') return socket.emit('ship:spawn');
-      } else {
+      if (ship && !(ship.cull != null)) {
         if (charCode === 'W' || charCode === 'A' || charCode === 'D' || charCode === ' ') {
           event.preventDefault();
           switch (String.fromCharCode(event.which)) {
@@ -855,10 +875,12 @@
               return ship.fire();
           }
         }
+      } else {
+        if (charCode === ' ') return socket.emit('ship:spawn');
       }
     }), false);
     setInterval((function() {
-      if (ship.cull) return;
+      if (!(ship && !ship.cull)) return;
       return publish('ship:moved', [ship]);
     }), 1000);
     document.addEventListener('keyup', (function(event) {
@@ -868,9 +890,26 @@
           return ship.stopThrusters();
       }
     }), false);
+    $('form').submit(function(e) {
+      var blue, green, name, red;
+      e.stopPropagation();
+      e.preventDefault();
+      name = $('form [name=name]').val();
+      red = parseInt($('form [name=red]').val());
+      green = parseInt($('form [name=green]').val());
+      blue = parseInt($("form [name=blue]").val());
+      return socket.emit("game:register", {
+        n: name,
+        c: {
+          r: red,
+          g: green,
+          b: blue
+        }
+      });
+    });
     return animate(function() {
       return world.render();
     });
-  }), false);
+  });
 
 }).call(this);

@@ -7,16 +7,20 @@ class ShipObserver
   moved: (ship) ->
     data =
       id: ship.id
-      position: ship.position()
-      angle: ship.angle
-      velocity: ship.velocity
-    @socket.emit('update', data)
+      p: ship.position()
+      a: ship.angle
+      v:
+        h: ship.velocity.horizontal
+        v: ship.velocity.vertical
+    @socket.emit 'update', data
 
   fired: (ship, bullet) ->
     data =
-      position: bullet.position()
-      velocity: bullet.velocity
-    @socket.emit('ship:fired', data)
+      p: bullet.position()
+      v:
+        h: bullet.velocity.horizontal
+        v: bullet.velocity.vertical
+    @socket.emit 'ship:fired', data
 
   exploded: (ship) ->
-    @socket.emit('ship:exploded', id: ship.id)
+    @socket.emit 'ship:exploded', id: ship.id

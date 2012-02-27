@@ -1,5 +1,5 @@
 (function() {
-  var app, cycle, express, io, next_thing_id, port, ship_colors, things, world_height, world_width, _ref;
+  var app, express, io, next_thing_id, port, things, world_height, world_width, _ref;
 
   express = require('express');
 
@@ -31,32 +31,6 @@
 
   app.listen(port);
 
-  cycle = function(items) {
-    var index, length, _ref;
-    _ref = [0, items.length], index = _ref[0], length = _ref[1];
-    return {
-      next: function() {
-        return items[index++ % length];
-      }
-    };
-  };
-
-  ship_colors = cycle([
-    {
-      r: 0,
-      g: 255,
-      b: 0
-    }, {
-      r: 255,
-      g: 0,
-      b: 0
-    }, {
-      r: 0,
-      g: 0,
-      b: 255
-    }
-  ]);
-
   things = {};
 
   next_thing_id = 0;
@@ -64,47 +38,48 @@
   _ref = [1500, 1500], world_width = _ref[0], world_height = _ref[1];
 
   io.sockets.on('connection', function(socket) {
-    var new_thing, tmp;
-    new_thing = {
-      id: ++next_thing_id,
-      x: world_width / 2,
-      y: world_height / 2,
-      color: ship_colors.next(),
-      maxSpeed: 3
-    };
-    things[next_thing_id] = new_thing;
-    tmp = {};
-    tmp[next_thing_id] = new_thing;
-    socket.broadcast.emit('add', tmp);
-    new_thing.yours = true;
-    socket.emit('add', things);
-    socket.set('ship_id', next_thing_id);
-    delete new_thing.yours;
+    socket.emit('game:joined', things);
+    socket.on("game:register", function(data) {
+      console.log(data);
+      socket.set("info", {
+        ship_id: ++next_thing_id,
+        name: data.n,
+        color: data.c
+      });
+      return socket.emit('game:registered');
+    });
     socket.on('ship:spawn', function() {
-      new_thing = {
-        id: ++next_thing_id,
-        x: world_width / 2,
-        y: world_height / 2,
-        color: ship_colors.next(),
-        maxSpeed: 3
-      };
-      things[next_thing_id] = new_thing;
-      tmp = {};
-      tmp[next_thing_id] = new_thing;
-      socket.broadcast.emit('add', tmp);
-      new_thing.yours = true;
-      socket.emit('add', things);
-      socket.set('ship_id', next_thing_id);
-      return delete new_thing.yours;
+      return socket.get('info', function(err, info) {
+        var new_thing;
+        new_thing = {
+          id: info.ship_id,
+          x: world_width / 2,
+          y: world_height / 2,
+          color: info.color,
+          maxSpeed: 3
+        };
+        things[info.ship_id] = new_thing;
+        socket.broadcast.emit('ship:spawned', new_thing);
+        new_thing.yours = true;
+        socket.emit('ship:spawned', new_thing);
+        return delete new_thing.yours;
+      });
     });
     socket.on('update', function(data) {
       var thing;
       thing = things[data.id];
-      thing.x = data.position.x;
-      thing.y = data.position.y;
-      thing.angle = data.angle;
-      thing.velocity = data.velocity;
-      return socket.broadcast.emit('update', data);
+      if (thing && (data.p != null) && (data.a != null) && (data.v != null)) {
+        thing.x = data.p.x;
+        thing.y = data.p.y;
+        thing.angle = data.a;
+        thing.velocity = {
+          horizontal: data.v.h,
+          vertical: data.v.v
+        };
+        return socket.broadcast.emit('update', data);
+      } else {
+        return console.log("BORKED", data);
+      }
     });
     socket.on('ship:fired', function(data) {
       return socket.broadcast.emit('ship:fired', data);
